@@ -1,6 +1,7 @@
 #include <iostream>
 #include "libs/httplib.h"
 #include "libs/argparse.hpp"
+#include "log.hpp"
 
 #define PROGRAM_NAME "program_name"
 #define PROGRAM_VERSION "0.0.1"
@@ -17,12 +18,12 @@ int main(int argc, char *argv[])
         .required()
         .help("resource url");
 
-    program.add_argument("-p", "--port")
-        .help("specify port")
-        .default_value(DEFAULT_HOST);
-
     program.add_argument("-H", "--host")
         .help("specify host")
+        .default_value(DEFAULT_HOST);
+
+    program.add_argument("-p", "--port")
+        .help("specify port")
         .default_value(DEFAULT_PORT);
 
     string resource_url, host;
@@ -53,6 +54,10 @@ int main(int argc, char *argv[])
         auto resp = client.Get(path);
 
         string content_type = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
+
+        Log log(path, req.body.data(), resp->body.data());
+
+        log.saveToFile();
 
         res.set_content(resp->body, content_type);
     };
