@@ -5,12 +5,12 @@ using namespace std;
 class Log
 {
 public:
-    string filePath;
     string path;
     string reqData;
     string resData;
+    string contentType;
 
-    Log(string pth, string rqd, string rsd);
+    Log(string pth, string rqd, string rsd, string ctp);
 
     void saveToFile();
 };

@@ -53,13 +53,13 @@ int main(int argc, char *argv[])
 
         auto resp = client.Get(path);
 
-        string content_type = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
+        string contentType = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
 
-        Log log(path, req.body.data(), resp->body.data());
+        Log log(path, req.body.data(), resp->body.data(), contentType);
 
         log.saveToFile();
 
-        res.set_content(resp->body, content_type);
+        res.set_content(resp->body, contentType);
     };
 
     server.Get(R"(/(.+))", get_handler);
