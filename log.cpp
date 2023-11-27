@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include "log.hpp"
 #include "file.hpp"
 
@@ -14,12 +15,26 @@ Log::Log(string pth, string rqd, string rsd)
 
 void Log::saveToFile()
 {
-    target_file file = resolve_file(path);
+    try
+    {
+        target_file file = resolve_file(path);
 
-    ofstream logFile(file.basename + ".txt");
+        string directories = "./data";
+        directories += file.path[0] == '/' ? "" : "/";
+        directories += file.path.substr(0, file.path.find_last_of("/"));
 
-    logFile << reqData;
-    logFile << resData;
+        filesystem::create_directories(directories);
 
-    logFile.close();
+        ofstream logFile(directories + "/" + file.basename + ".txt");
+
+        logFile << reqData;
+        logFile << resData;
+
+        logFile.close();
+    }
+    catch (const exception &e)
+    {
+        cerr << "Failed to save log file" << endl;
+        cerr << e.what() << endl;
+    }
 }
