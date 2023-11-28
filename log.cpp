@@ -16,12 +16,24 @@ Log::Log(string pth, string rqd, string rsd, string ctp)
     contentType = ctp;
 }
 
+string Log::extFromContentType()
+{
+    if (contentType == "text/plain")
+    {
+        return ".txt";
+    }
+
+    int startValue = contentType.find("/") + 1;
+    int endValue = contentType.find(";") - contentType.find("/") - 1;
+    return "." + contentType.substr(startValue, endValue);
+}
+
 void Log::saveToFile()
 {
     try
     {
         target_file tfile = resolve_file(path);
-        tfile.extension = "." + contentType.substr(contentType.find("/") + 1, contentType.find(";") - contentType.find("/") - 1);
+        tfile.extension = extFromContentType();
 
         string directories = ROOT_DATA_DIR;
         directories += tfile.path[0] == '/' ? "" : "/";
