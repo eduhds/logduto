@@ -26,14 +26,14 @@ int main(int argc, char *argv[])
         .help("specify port")
         .default_value(DEFAULT_PORT);
 
-    string resource_url, host;
+    string resourceUrl, host;
     int port;
 
     try
     {
         program.parse_args(argc, argv);
 
-        resource_url = program.get<string>("--url");
+        resourceUrl = program.get<string>("--url");
         host = program.get<string>("--host");
         port = stoi(program.get<string>("--port"));
     }
@@ -45,13 +45,13 @@ int main(int argc, char *argv[])
     }
 
     httplib::Server server;
-    httplib::Client client(resource_url);
+    httplib::Client client(resourceUrl);
 
-    auto get_handler = [&](const httplib::Request &req, httplib::Response &res)
+    auto getHandler = [&](const httplib::Request &req, httplib::Response &res)
     {
         string path = req.matches[0].str();
 
-        auto resp = client.Get(path);
+        auto resp = client.Get(path, req.headers);
 
         string contentType = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
 
@@ -62,9 +62,32 @@ int main(int argc, char *argv[])
         res.set_content(resp->body, contentType);
     };
 
-    server.Get(R"(/(.+))", get_handler);
+    auto postHandler = [&](const httplib::Request &req, httplib::Response &res)
+    {
+        string path = req.matches[0].str();
 
-    cout << "Forwarding from http://" << host << ":" << port << " to " << resource_url << endl;
+        httplib::Params params;
+        params.emplace("json", req.body);
+
+        auto resp = client.Post(path, req.headers, params);
+
+        string contentType = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
+
+        Log log(path, req.body.data(), resp->body.data(), contentType);
+
+        log.saveToFile();
+
+        res.set_content(resp->body, contentType);
+    };
+
+    string urlPattern = R"(/(.+))";
+
+    server.set_default_headers({{"Access-Control-Allow-Origin", "*"}});
+
+    server.Get(urlPattern, getHandler);
+    server.Post(urlPattern, postHandler);
+
+    cout << "Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
 
     server.listen(host, port);
 
