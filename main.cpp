@@ -47,45 +47,54 @@ int main(int argc, char *argv[])
     httplib::Server server;
     httplib::Client client(resourceUrl);
 
-    auto getHandler = [&](const httplib::Request &req, httplib::Response &res)
-    {
-        string path = req.matches[0].str();
+    server.set_default_headers({{"Access-Control-Allow-Origin", "*"}});
 
-        auto resp = client.Get(path, req.headers);
-
-        string contentType = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
-
-        Log log(path, req.body.data(), resp->body.data(), contentType);
-
-        log.saveToFile();
-
-        res.set_content(resp->body, contentType);
-    };
-
-    auto postHandler = [&](const httplib::Request &req, httplib::Response &res)
+    auto commonHandler = [&](const httplib::Request &req, httplib::Response &res)
     {
         string path = req.matches[0].str();
 
         httplib::Params params;
-        params.emplace("json", req.body);
+        httplib::Result result;
 
-        auto resp = client.Post(path, req.headers, params);
+        if (req.body.size() > 0)
+        {
+            params.emplace("json", req.body);
+        }
 
-        string contentType = resp->has_header("Content-Type") ? resp->get_header_value("Content-Type") : "text/plain";
+        if (req.method == "POST")
+            result = client.Post(path, req.headers, params);
+        else if (req.method == "PUT")
+            result = client.Put(path, req.headers, params);
+        else if (req.method == "PATCH")
+            result = client.Patch(path);
+        else if (req.method == "DELETE")
+            result = client.Delete(path, req.headers);
+        else
+            result = client.Get(path, req.headers);
 
-        Log log(path, req.body.data(), resp->body.data(), contentType);
+        string contentType = result->has_header("Content-Type") ? result->get_header_value("Content-Type") : "text/plain";
+
+        Log log(path, req.body.data(), result->body.data(), contentType);
 
         log.saveToFile();
 
-        res.set_content(resp->body, contentType);
+        res.status = result->status;
+        res.set_content(result->body, contentType);
+    };
+
+    auto optionsHandler = [](const httplib::Request &req, httplib::Response &res)
+    {
+        res.status = 200;
     };
 
     string urlPattern = R"(/(.+))";
 
-    server.set_default_headers({{"Access-Control-Allow-Origin", "*"}});
-
-    server.Get(urlPattern, getHandler);
-    server.Post(urlPattern, postHandler);
+    server.Get(urlPattern, commonHandler);
+    server.Post(urlPattern, commonHandler);
+    server.Put(urlPattern, commonHandler);
+    server.Patch(urlPattern, commonHandler);
+    server.Delete(urlPattern, commonHandler);
+    server.Options(urlPattern, optionsHandler);
 
     cout << "Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
 
