@@ -100,14 +100,20 @@ int main(int argc, char *argv[])
         handleResultError(res);
     };
 
-    string urlPattern = R"(/(.+))";
+    string urlPattern = "(.*)"; // R"((.+))";
 
     server.Get(urlPattern, controller);
     server.Post(urlPattern, controller);
     server.Put(urlPattern, controller);
     server.Patch(urlPattern, controller);
     server.Delete(urlPattern, controller);
-    server.Options(urlPattern, controller);
+    server.Options("/(.*)", [](const httplib::Request &req, httplib::Response &res)
+                   { 
+                        cout << "--- OPTIONS ---" <<req.get_header_value("Origin").c_str()<< endl;
+                     res.set_header("Access-Control-Allow-Methods", "*");
+                      res.set_header("Access-Control-Allow-Headers", "*");
+                      res.set_header("Access-Control-Allow-Origin", "*"/* req.get_header_value("Origin").c_str() */);
+                      res.set_header("Connection", "close"); });
 
     cout << "Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
 
@@ -123,10 +129,13 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
     cout << "Status: " << result->status << endl;
     cout << "Content-Type: " << contentType << endl;
 
+    cout << "Body: " << req.body << endl;
+
     Log log(req.matches[0].str(), req.body.data(), result->body.data(), contentType);
     log.saveToFile();
 
     res.status = result->status;
+    res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
     res.set_content(result->body, contentType);
 }
 
