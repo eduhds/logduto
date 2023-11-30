@@ -51,8 +51,6 @@ int main(int argc, char *argv[])
     httplib::Server server;
     httplib::Client client(resourceUrl);
 
-    // server.set_default_headers({{"Access-Control-Allow-Origin", "*"}});
-
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
         string path = req.matches[0].str();
@@ -60,6 +58,15 @@ int main(int argc, char *argv[])
 
         cout << "\n--- " << method << " ---" << endl;
         cout << "Path: " << path << endl;
+
+        if (method == "OPTIONS")
+        {
+            res.set_header("Access-Control-Allow-Methods", "*");
+            res.set_header("Access-Control-Allow-Headers", "*");
+            res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
+            res.set_header("Connection", "close");
+            return;
+        }
 
         httplib::Result result;
         httplib::Params params;
@@ -80,10 +87,6 @@ int main(int argc, char *argv[])
         else if (req.method == "DELETE")
         {
             result = client.Delete(path, req.headers);
-        }
-        else if (req.method == "OPTIONS")
-        {
-            result = client.Options(path, req.headers);
         }
         else
         {
@@ -107,13 +110,7 @@ int main(int argc, char *argv[])
     server.Put(urlPattern, controller);
     server.Patch(urlPattern, controller);
     server.Delete(urlPattern, controller);
-    server.Options("/(.*)", [](const httplib::Request &req, httplib::Response &res)
-                   { 
-                        cout << "--- OPTIONS ---" <<req.get_header_value("Origin").c_str()<< endl;
-                     res.set_header("Access-Control-Allow-Methods", "*");
-                      res.set_header("Access-Control-Allow-Headers", "*");
-                      res.set_header("Access-Control-Allow-Origin", "*"/* req.get_header_value("Origin").c_str() */);
-                      res.set_header("Connection", "close"); });
+    server.Options(urlPattern, controller);
 
     cout << "Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
 
