@@ -1,7 +1,9 @@
 #include <iostream>
-#include "libs/httplib.h"
 #include "libs/argparse.hpp"
 #include "log.hpp"
+
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "libs/httplib.h"
 
 #define PROGRAM_NAME "program_name"
 #define PROGRAM_VERSION "0.0.1"
@@ -50,6 +52,8 @@ int main(int argc, char *argv[])
 
     httplib::Server server;
     httplib::Client client(resourceUrl);
+
+    client.enable_server_certificate_verification(false);
 
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
@@ -125,8 +129,6 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
 
     cout << "Status: " << result->status << endl;
     cout << "Content-Type: " << contentType << endl;
-
-    cout << "Body: " << req.body << endl;
 
     Log log(req.matches[0].str(), req.body.data(), result->body.data(), contentType);
     log.saveToFile();
