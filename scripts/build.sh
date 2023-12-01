@@ -1,9 +1,27 @@
 #!/bin/sh
 
-mkdir -p out
-
-rm -rf out/* 2> /dev/null || true
+rm -rf out
 
 program_name="$(basename $(pwd))"
 
-g++ -std=c++17 -o out/$program_name *.cpp
+if [ "$1" = "-r" ]; then
+    # Build for release
+
+    mkdir -p build
+    rm -rf build/release 2> /dev/null || true && mkdir -p build/release
+
+    # TODO: g++ -O3 -sg++ ...
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+elif [ "$1" = "-d" ]; then
+    # Build for debug
+    mkdir -p build
+    rm -rf build/debug 2> /dev/null || true && mkdir -p build/debug
+
+    g++ -g -std=c++17 -o build/debug/$program_name *.cpp -lssl -lcrypto
+else
+    echo "Usage: $0 [-r] [-d]"
+    exit 1
+fi
