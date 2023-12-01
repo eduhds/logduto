@@ -3,6 +3,7 @@
 #include "log.hpp"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
+#define CPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN
 #include "libs/httplib.h"
 
 #define PROGRAM_NAME "program_name"
