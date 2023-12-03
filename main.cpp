@@ -3,7 +3,6 @@
 #include "log.hpp"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
-#define CPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN
 #include "libs/httplib.h"
 
 #define PROGRAM_NAME "program_name"
@@ -91,12 +90,12 @@ int main(int argc, char *argv[])
         }
         else if (req.method == "DELETE")
         {
-            result = client.Delete(path, req.headers);
+            result = req.headers.empty() ? client.Delete(path) : client.Delete(path, req.headers);
         }
         else
         {
-            // Default GET
-            result = client.Get(path, req.headers);
+            //  Default GET
+            result = req.headers.empty() ? client.Get(path) : client.Get(path, req.headers);
         }
 
         if (result)
