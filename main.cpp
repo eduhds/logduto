@@ -16,6 +16,8 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
 
 void handleResultError(httplib::Response &res);
 
+bool isInvalidHeader(const string &header);
+
 int main(int argc, char *argv[])
 {
     argparse::ArgumentParser program(PROGRAM_NAME, PROGRAM_VERSION);
@@ -74,15 +76,45 @@ int main(int argc, char *argv[])
 
         httplib::Result result;
         httplib::Params params;
-        params.emplace("json", req.body);
+        httplib::Headers headers;
+
+        // Set params
+        if (!req.body.empty())
+        {
+            params.emplace("json", req.body);
+        }
+
+        // Set headers
+        for (auto &header : req.headers)
+        {
+            if (isInvalidHeader(header.first))
+                continue;
+            headers.insert({header.first, header.second});
+        }
+
+        bool withHeaders = !headers.empty();
+        bool withParams = !params.empty();
+        bool withHeadersAndParams = withHeaders && withParams;
 
         if (method == "POST")
         {
-            result = client.Post(path, req.headers, params);
+            if (withHeadersAndParams)
+                result = client.Post(path, headers, params);
+            else if (withHeaders)
+                result = client.Post(path, headers);
+            else if (withParams)
+                result = client.Post(path, params);
+            else
+                result = client.Post(path);
         }
         else if (req.method == "PUT")
         {
-            result = client.Put(path, req.headers, params);
+            if (withHeadersAndParams)
+                result = client.Put(path, headers, params);
+            else if (withParams)
+                result = client.Put(path, params);
+            else
+                result = client.Put(path);
         }
         else if (req.method == "PATCH")
         {
@@ -90,12 +122,18 @@ int main(int argc, char *argv[])
         }
         else if (req.method == "DELETE")
         {
-            result = req.headers.empty() ? client.Delete(path) : client.Delete(path, req.headers);
+            if (withHeaders)
+                result = client.Delete(path, headers);
+            else
+                result = headers.empty() ? client.Delete(path) : client.Delete(path, headers);
         }
         else
         {
             //  Default GET
-            result = req.headers.empty() ? client.Get(path) : client.Get(path, req.headers);
+            if (withHeaders)
+                result = client.Get(path, headers);
+            else
+                result = client.Get(path);
         }
 
         if (result)
@@ -141,4 +179,14 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
 void handleResultError(httplib::Response &res)
 {
     res.set_content("--- Error ---", "text/plain");
+}
+
+bool isInvalidHeader(const string &header)
+{
+    return header == "Host" ||
+           header == "LOCAL_ADDR" ||
+           header == "LOCAL_PORT" ||
+           header == "REMOTE_ADDR" ||
+           header == "REMOTE_PORT" ||
+           header == "User-Agent";
 }
