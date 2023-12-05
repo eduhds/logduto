@@ -15,6 +15,11 @@ string removeLastNewLine(string str)
     return (!str.empty() && str[str.length() - 1] == '\n') ? str.substr(0, str.length() - 1) : str;
 }
 
+string removeLastSlash(string str)
+{
+    return (!str.empty() && str[str.length() - 1] == '/') ? str.substr(0, str.length() - 1) : str;
+}
+
 ReqData::ReqData(string h, string b, string c)
 {
     headers = removeLastNewLine(h);
@@ -68,7 +73,7 @@ string ResData::getContentType()
 Logduto::Logduto(string mtd, string pth, bool saveReq, bool saveRes)
 {
     method = removeLastNewLine(mtd);
-    path = removeLastNewLine(pth);
+    path = removeLastSlash(removeLastNewLine(pth));
     saveRequestData = saveReq;
     saveResponseData = saveRes;
 }
@@ -76,10 +81,9 @@ Logduto::Logduto(string mtd, string pth, bool saveReq, bool saveRes)
 string Logduto::extFromContentType()
 {
     string contentType = reqData.getContentType();
+
     if (contentType == "text/plain")
-    {
         return ".txt";
-    }
 
     int startValue = contentType.find("/") + 1;
     int endValue = contentType.find(";") - contentType.find("/") - 1;
@@ -116,7 +120,7 @@ void Logduto::saveToFile()
         filesystem::create_directories(directories);
 
         string logFileName = method + regex_replace(path, regex("/"), "_") + "_" + dateFormat;
-        ofstream logFile(directories + "/" + logFileName + ".log");
+        ofstream logFile(string(ROOT_LOGS_DIR) + "/" + logFileName + ".log");
 
         logFile << "[DATE]\n"
                 << date << "\n\n";

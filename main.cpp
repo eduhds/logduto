@@ -18,7 +18,7 @@
 
 using namespace std;
 
-void handleResultSuccess(const httplib::Request &req, httplib::Response &res, httplib::Result &result);
+void handleResultSuccess(string path, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
 
 void handleResultError(httplib::Response &res);
 
@@ -83,11 +83,22 @@ int main(int argc, char *argv[])
         httplib::Result result;
         httplib::Params params;
         httplib::Headers headers;
+        string queryParams = "";
 
         // Set params
         if (!req.body.empty())
         {
             params.emplace("json", req.body);
+        }
+
+        if (!req.params.empty())
+        {
+            queryParams = "?";
+            for (auto &param : req.params)
+            {
+                queryParams += param.first + "=" + param.second + "&";
+            }
+            queryParams.pop_back();
         }
 
         // Set headers
@@ -135,6 +146,9 @@ int main(int argc, char *argv[])
         }
         else //  Default GET
         {
+            if (queryParams.size() > 0)
+                path += queryParams;
+
             if (withHeaders)
                 result = client.Get(path, headers);
             else
@@ -143,7 +157,7 @@ int main(int argc, char *argv[])
 
         if (result)
         {
-            handleResultSuccess(req, res, result);
+            handleResultSuccess(path, req, res, result);
             return;
         }
 
@@ -168,7 +182,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void handleResultSuccess(const httplib::Request &req, httplib::Response &res, httplib::Result &result)
+void handleResultSuccess(string path, const httplib::Request &req, httplib::Response &res, httplib::Result &result)
 {
 
     string reqCtnType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
@@ -191,7 +205,7 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
     cout << "Status: " << result->status << endl;
     cout << "Content-Type: " << resCtnType << endl;
 
-    Logduto logduto(req.method, req.matches[0].str(), false, false);
+    Logduto logduto(req.method, path, false, false);
 
     logduto.setReqData(ReqData(reqHeaders, req.body.data(), reqCtnType));
     logduto.setResData(ResData(result->status, resHeaders, result->body.data(), resCtnType));

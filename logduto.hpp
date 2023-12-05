@@ -4,6 +4,8 @@ using namespace std;
 
 string removeLastNewLine(string str);
 
+string removeLastSlash(string str);
+
 class ReqData
 {
 private:
