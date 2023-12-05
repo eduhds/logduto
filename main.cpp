@@ -177,6 +177,8 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
     string reqHeaders = "";
     for (auto &header : req.headers)
     {
+        if (isInvalidHeader(header.first))
+            continue;
         reqHeaders += header.first + ": " + header.second + "\n";
     }
 
