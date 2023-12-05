@@ -1,14 +1,14 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include "log.hpp"
-#include "file.hpp"
+#include "logduto.hpp"
+#include "targetfile.hpp"
 
 #define ROOT_DATA_DIR "./data"
 
 using namespace std;
 
-Log::Log(string pth, string rqd, string rsd, string ctp)
+Logduto::Logduto(string pth, string rqd, string rsd, string ctp)
 {
     path = pth;
     reqData = rqd;
@@ -16,7 +16,7 @@ Log::Log(string pth, string rqd, string rsd, string ctp)
     contentType = ctp;
 }
 
-string Log::extFromContentType()
+string Logduto::extFromContentType()
 {
     if (contentType == "text/plain")
     {
@@ -28,7 +28,7 @@ string Log::extFromContentType()
     return "." + contentType.substr(startValue, endValue);
 }
 
-void Log::saveToFile()
+void Logduto::saveToFile()
 {
     try
     {

@@ -1,6 +1,11 @@
+/**
+ * Logduto
+ * Salva requisições em arquivo
+ */
+
 #include <iostream>
 #include "libs/argparse.hpp"
-#include "log.hpp"
+#include "logduto.hpp"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "libs/httplib.h"
@@ -127,9 +132,8 @@ int main(int argc, char *argv[])
             else
                 result = headers.empty() ? client.Delete(path) : client.Delete(path, headers);
         }
-        else
+        else //  Default GET
         {
-            //  Default GET
             if (withHeaders)
                 result = client.Get(path, headers);
             else
@@ -168,8 +172,8 @@ void handleResultSuccess(const httplib::Request &req, httplib::Response &res, ht
     cout << "Status: " << result->status << endl;
     cout << "Content-Type: " << contentType << endl;
 
-    Log log(req.matches[0].str(), req.body.data(), result->body.data(), contentType);
-    log.saveToFile();
+    Logduto logduto(req.matches[0].str(), req.body.data(), result->body.data(), contentType);
+    logduto.saveToFile();
 
     res.status = result->status;
     res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()

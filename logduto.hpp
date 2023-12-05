@@ -2,7 +2,7 @@
 
 using namespace std;
 
-class Log
+class Logduto
 {
 private:
     string path;
@@ -13,7 +13,7 @@ private:
     string extFromContentType();
 
 public:
-    Log(string pth, string rqd, string rsd, string ctp);
+    Logduto(string pth, string rqd, string rsd, string ctp);
 
     void saveToFile();
 };
