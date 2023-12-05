@@ -6,6 +6,7 @@
 #include <iostream>
 #include "libs/argparse.hpp"
 #include "logduto.hpp"
+#include "title.hpp"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "libs/httplib.h"
@@ -158,7 +159,9 @@ int main(int argc, char *argv[])
     server.Delete(urlPattern, controller);
     server.Options(urlPattern, controller);
 
-    cout << "Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
+    cout << title << endl;
+
+    cout << "• Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
 
     server.listen(host, port);
 
