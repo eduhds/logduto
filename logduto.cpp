@@ -10,11 +10,16 @@
 
 using namespace std;
 
+string removeNewLine(string str)
+{
+    return regex_replace(str, regex("\n"), "");
+}
+
 ReqData::ReqData(string h, string b, string c)
 {
-    headers = h;
-    body = b;
-    contentType = c;
+    headers = removeNewLine(h);
+    body = removeNewLine(b);
+    contentType = removeNewLine(c);
 }
 
 string ReqData::getBody()
@@ -35,9 +40,9 @@ string ReqData::getContentType()
 ResData::ResData(int s, string h, string b, string c)
 {
     status = s;
-    headers = h;
-    body = b;
-    contentType = c;
+    headers = removeNewLine(h);
+    body = removeNewLine(b);
+    contentType = removeNewLine(c);
 }
 
 int ResData::getStatus()
@@ -62,8 +67,8 @@ string ResData::getContentType()
 
 Logduto::Logduto(string mtd, string pth, bool saveReq, bool saveRes)
 {
-    method = mtd;
-    path = pth;
+    method = removeNewLine(mtd);
+    path = removeNewLine(pth);
     saveRequestData = saveReq;
     saveResponseData = saveRes;
 }
@@ -97,7 +102,7 @@ void Logduto::saveToFile()
     {
         time_t now = time(0);
         string date = ctime(&now);
-        date = regex_replace(date, regex("  "), " "); // Remove double spaces
+        date = removeNewLine(regex_replace(date, regex("  "), " "));
 
         string dateFormat = regex_replace(date, regex(" "), "_");
 
@@ -114,7 +119,7 @@ void Logduto::saveToFile()
         ofstream logFile(directories + "/" + logFileName + ".log");
 
         logFile << "[DATE]\n"
-                << date << "\n";
+                << date << "\n\n";
 
         logFile << "[URL]\n"
                 << method << " " << path << "\n\n";
