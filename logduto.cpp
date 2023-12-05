@@ -1,23 +1,76 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <ctime>
+#include <regex>
 #include "logduto.hpp"
 #include "targetfile.hpp"
 
-#define ROOT_DATA_DIR "./data"
+#define ROOT_LOGS_DIR "./logs"
 
 using namespace std;
 
-Logduto::Logduto(string pth, string rqd, string rsd, string ctp)
+ReqData::ReqData(string h, string b, string c)
 {
+    headers = h;
+    body = b;
+    contentType = c;
+}
+
+string ReqData::getBody()
+{
+    return body;
+}
+
+string ReqData::getHeaders()
+{
+    return headers;
+}
+
+string ReqData::getContentType()
+{
+    return contentType;
+}
+
+ResData::ResData(int s, string h, string b, string c)
+{
+    status = s;
+    headers = h;
+    body = b;
+    contentType = c;
+}
+
+int ResData::getStatus()
+{
+    return status;
+}
+
+string ResData::getHeaders()
+{
+    return headers;
+}
+
+string ResData::getBody()
+{
+    return body;
+}
+
+string ResData::getContentType()
+{
+    return contentType;
+}
+
+Logduto::Logduto(string mtd, string pth, bool saveReq, bool saveRes)
+{
+    method = mtd;
     path = pth;
-    reqData = rqd;
-    resData = rsd;
-    contentType = ctp;
+    saveRequestData = saveReq;
+    saveResponseData = saveRes;
 }
 
 string Logduto::extFromContentType()
 {
+    string contentType = reqData.getContentType();
     if (contentType == "text/plain")
     {
         return ".txt";
@@ -28,25 +81,71 @@ string Logduto::extFromContentType()
     return "." + contentType.substr(startValue, endValue);
 }
 
+void Logduto::setReqData(ReqData req)
+{
+    reqData = req;
+}
+
+void Logduto::setResData(ResData res)
+{
+    resData = res;
+}
+
 void Logduto::saveToFile()
 {
     try
     {
+        time_t now = time(0);
+        string date = ctime(&now);
+        date = regex_replace(date, regex("  "), " "); // Remove double spaces
+
+        string dateFormat = regex_replace(date, regex(" "), "_");
+
         target_file tfile = resolve_file(path);
         tfile.extension = extFromContentType();
 
-        string directories = ROOT_DATA_DIR;
+        string directories = ROOT_LOGS_DIR;
         directories += tfile.path[0] == '/' ? "" : "/";
         directories += tfile.path.substr(0, tfile.path.find_last_of("/"));
 
         filesystem::create_directories(directories);
 
-        ofstream logFile(directories + "/" + tfile.basename + tfile.extension);
+        string logFileName = method + regex_replace(path, regex("/"), "_") + "_" + dateFormat;
+        ofstream logFile(directories + "/" + logFileName + ".log");
 
-        logFile << reqData;
-        logFile << resData;
+        logFile << "[DATE]\n"
+                << date << "\n";
+
+        logFile << "[URL]\n"
+                << method << " " << path << "\n\n";
+
+        logFile << "[REQUEST HEADERS]\n"
+                << reqData.getHeaders() << "\n\n";
+        logFile << "[REQUEST BODY]\n"
+                << reqData.getBody() << "\n\n";
+
+        logFile << "[RESPONSE STATUS]\n"
+                << resData.getStatus() << "\n\n";
+        logFile << "[RESPONSE HEADERS]\n"
+                << resData.getHeaders() << "\n\n";
+        logFile << "[RESPONSE BODY]\n"
+                << resData.getBody() << "\n\n";
 
         logFile.close();
+
+        if (saveRequestData)
+        {
+            ofstream reqFile(directories + "/" + tfile.basename + tfile.extension);
+            reqFile << reqData.getBody();
+            reqFile.close();
+        }
+
+        if (saveResponseData)
+        {
+            ofstream resFile(directories + "/" + tfile.basename + tfile.extension);
+            resFile << resData.getBody();
+            resFile.close();
+        }
     }
     catch (const exception &e)
     {

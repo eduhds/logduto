@@ -170,17 +170,35 @@ int main(int argc, char *argv[])
 
 void handleResultSuccess(const httplib::Request &req, httplib::Response &res, httplib::Result &result)
 {
-    string contentType = result->has_header("Content-Type") ? result->get_header_value("Content-Type") : "text/plain";
+
+    string reqCtnType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
+    string resCtnType = result->has_header("Content-Type") ? result->get_header_value("Content-Type") : "text/plain";
+
+    string reqHeaders = "";
+    for (auto &header : req.headers)
+    {
+        reqHeaders += header.first + ": " + header.second + "\n";
+    }
+
+    string resHeaders = "";
+    for (auto &header : result->headers)
+    {
+        resHeaders += header.first + ": " + header.second + "\n";
+    }
 
     cout << "Status: " << result->status << endl;
-    cout << "Content-Type: " << contentType << endl;
+    cout << "Content-Type: " << resCtnType << endl;
 
-    Logduto logduto(req.matches[0].str(), req.body.data(), result->body.data(), contentType);
+    Logduto logduto(req.method, req.matches[0].str(), false, false);
+
+    logduto.setReqData(ReqData(reqHeaders, req.body.data(), reqCtnType));
+    logduto.setResData(ResData(result->status, resHeaders, result->body.data(), resCtnType));
+
     logduto.saveToFile();
 
     res.status = result->status;
     res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
-    res.set_content(result->body, contentType);
+    res.set_content(result->body, resCtnType);
 }
 
 void handleResultError(httplib::Response &res)
