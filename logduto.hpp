@@ -2,6 +2,8 @@
 
 using namespace std;
 
+string removeLastNewLine(string str);
+
 class ReqData
 {
 private:

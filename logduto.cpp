@@ -10,16 +10,16 @@
 
 using namespace std;
 
-string removeNewLine(string str)
+string removeLastNewLine(string str)
 {
-    return regex_replace(str, regex("\n"), "");
+    return (!str.empty() && str[str.length() - 1] == '\n') ? str.substr(0, str.length() - 1) : str;
 }
 
 ReqData::ReqData(string h, string b, string c)
 {
-    headers = removeNewLine(h);
-    body = removeNewLine(b);
-    contentType = removeNewLine(c);
+    headers = removeLastNewLine(h);
+    body = removeLastNewLine(b);
+    contentType = removeLastNewLine(c);
 }
 
 string ReqData::getBody()
@@ -40,9 +40,9 @@ string ReqData::getContentType()
 ResData::ResData(int s, string h, string b, string c)
 {
     status = s;
-    headers = removeNewLine(h);
-    body = removeNewLine(b);
-    contentType = removeNewLine(c);
+    headers = removeLastNewLine(h);
+    body = removeLastNewLine(b);
+    contentType = removeLastNewLine(c);
 }
 
 int ResData::getStatus()
@@ -67,8 +67,8 @@ string ResData::getContentType()
 
 Logduto::Logduto(string mtd, string pth, bool saveReq, bool saveRes)
 {
-    method = removeNewLine(mtd);
-    path = removeNewLine(pth);
+    method = removeLastNewLine(mtd);
+    path = removeLastNewLine(pth);
     saveRequestData = saveReq;
     saveResponseData = saveRes;
 }
@@ -102,7 +102,7 @@ void Logduto::saveToFile()
     {
         time_t now = time(0);
         string date = ctime(&now);
-        date = removeNewLine(regex_replace(date, regex("  "), " "));
+        date = removeLastNewLine(regex_replace(date, regex("  "), " "));
 
         string dateFormat = regex_replace(date, regex(" "), "_");
 
