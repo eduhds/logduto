@@ -6,8 +6,6 @@
 #include "logduto.hpp"
 #include "targetfile.hpp"
 
-#define ROOT_LOGS_DIR "./logs"
-
 using namespace std;
 
 string removeLastNewLine(string str)
@@ -113,14 +111,10 @@ void Logduto::saveToFile()
         target_file tfile = resolve_file(path);
         tfile.extension = extFromContentType();
 
-        string directories = ROOT_LOGS_DIR;
-        directories += tfile.path[0] == '/' ? "" : "/";
-        directories += tfile.path.substr(0, tfile.path.find_last_of("/"));
-
-        filesystem::create_directories(directories);
+        filesystem::create_directories(logsDir);
 
         string logFileName = method + regex_replace(path, regex("/"), "_") + "_" + dateFormat;
-        ofstream logFile(string(ROOT_LOGS_DIR) + "/" + logFileName + ".log");
+        ofstream logFile(logsDir + "/" + logFileName + ".log");
 
         logFile << "[DATE]\n"
                 << date << "\n\n";
@@ -138,22 +132,35 @@ void Logduto::saveToFile()
         logFile << "[RESPONSE HEADERS]\n"
                 << resData.getHeaders() << "\n\n";
         logFile << "[RESPONSE BODY]\n"
-                << resData.getBody() << "\n\n";
+                << resData.getBody() << "\n";
 
         logFile.close();
 
-        if (saveRequestData)
+        if (saveRequestData || saveResponseData)
         {
-            ofstream reqFile(directories + "/" + tfile.basename + tfile.extension);
-            reqFile << reqData.getBody();
-            reqFile.close();
-        }
+            string reqDir = logsDir + "/data/request/" + method + "/";
+            string resDir = logsDir + "/data/response/" + method + "/";
 
-        if (saveResponseData)
-        {
-            ofstream resFile(directories + "/" + tfile.basename + tfile.extension);
-            resFile << resData.getBody();
-            resFile.close();
+            string reqResDirectories = tfile.path[0] == '/' ? "" : "/";
+            reqResDirectories += tfile.path.substr(0, tfile.path.find_last_of("/"));
+
+            if (saveRequestData)
+            {
+                reqDir += reqResDirectories;
+                filesystem::create_directories(reqDir);
+                ofstream reqFile(reqDir + "/" + tfile.basename + tfile.extension);
+                reqFile << reqData.getBody();
+                reqFile.close();
+            }
+
+            if (saveResponseData)
+            {
+                resDir += reqResDirectories;
+                filesystem::create_directories(resDir);
+                ofstream resFile(resDir + "/" + tfile.basename + tfile.extension);
+                resFile << resData.getBody();
+                resFile.close();
+            }
         }
     }
     catch (const exception &e)

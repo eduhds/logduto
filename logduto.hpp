@@ -1,5 +1,7 @@
 #include <iostream>
 
+#define ROOT_LOGS_DIR "./logs"
+
 using namespace std;
 
 string removeLastNewLine(string str);
@@ -53,6 +55,8 @@ private:
     string extFromContentType();
 
 public:
+    string logsDir = ROOT_LOGS_DIR;
+
     Logduto(string mtd, string pth, bool saveReq, bool saveRes);
 
     void setReqData(ReqData req);

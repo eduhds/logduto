@@ -18,7 +18,7 @@
 
 using namespace std;
 
-void handleResultSuccess(string path, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
+void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
 
 void handleResultError(httplib::Response &res);
 
@@ -40,7 +40,17 @@ int main(int argc, char *argv[])
         .help("specify port")
         .default_value(DEFAULT_PORT);
 
-    string resourceUrl, host;
+    program.add_argument("-d", "--data")
+        .help("save request and response files")
+        .default_value(false)
+        .implicit_value(true);
+
+    program.add_argument("-l", "--logs")
+        .help("specify logs directory")
+        .default_value("");
+
+    string resourceUrl, host, logsDir;
+    bool saveData = false;
     int port;
 
     try
@@ -50,6 +60,8 @@ int main(int argc, char *argv[])
         resourceUrl = program.get<string>("--url");
         host = program.get<string>("--host");
         port = stoi(program.get<string>("--port"));
+        saveData = program.get<bool>("--data");
+        logsDir = program.get<string>("--logs");
     }
     catch (const exception &err)
     {
@@ -67,6 +79,7 @@ int main(int argc, char *argv[])
     {
         string path = req.matches[0].str();
         string method = req.method;
+        string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
 
         cout << "\n--- " << method << " ---" << endl;
         cout << "Path: " << path << endl;
@@ -78,6 +91,13 @@ int main(int argc, char *argv[])
             res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
             res.set_header("Connection", "close");
             return;
+        }
+
+        Logduto logduto(method, path, saveData, saveData);
+
+        if (logsDir != "")
+        {
+            logduto.logsDir = logsDir;
         }
 
         httplib::Result result;
@@ -116,7 +136,8 @@ int main(int argc, char *argv[])
         if (method == "POST")
         {
             if (withHeadersAndParams)
-                result = client.Post(path, headers, params);
+                result = client.Post(path, headers, req.body, contentType);
+            // result = client.Post(path, headers, params);
             else if (withHeaders)
                 result = client.Post(path, headers);
             else if (withParams)
@@ -157,14 +178,14 @@ int main(int argc, char *argv[])
 
         if (result)
         {
-            handleResultSuccess(path, req, res, result);
+            handleResultSuccess(logduto, req, res, result);
             return;
         }
 
         handleResultError(res);
     };
 
-    string urlPattern = "(.*)"; // R"((.+))";
+    string urlPattern = "(.*)";
 
     server.Get(urlPattern, controller);
     server.Post(urlPattern, controller);
@@ -182,9 +203,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void handleResultSuccess(string path, const httplib::Request &req, httplib::Response &res, httplib::Result &result)
+void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib::Response &res, httplib::Result &result)
 {
-
     string reqCtnType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
     string resCtnType = result->has_header("Content-Type") ? result->get_header_value("Content-Type") : "text/plain";
 
@@ -203,9 +223,6 @@ void handleResultSuccess(string path, const httplib::Request &req, httplib::Resp
     }
 
     cout << "Status: " << result->status << endl;
-    cout << "Content-Type: " << resCtnType << endl;
-
-    Logduto logduto(req.method, path, false, false);
 
     logduto.setReqData(ReqData(reqHeaders, req.body.data(), reqCtnType));
     logduto.setResData(ResData(result->status, resHeaders, result->body.data(), resCtnType));
