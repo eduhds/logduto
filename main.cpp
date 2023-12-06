@@ -62,6 +62,12 @@ int main(int argc, char *argv[])
         port = stoi(program.get<string>("--port"));
         saveData = program.get<bool>("--data");
         logsDir = program.get<string>("--logs");
+
+        if (!logsDir.empty())
+        {
+            if (!filesystem::is_directory(logsDir))
+                throw runtime_error("Specified logs directory is not a directory\n");
+        }
     }
     catch (const exception &err)
     {
