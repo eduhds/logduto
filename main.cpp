@@ -4,6 +4,7 @@
  */
 
 #include <iostream>
+#include <filesystem>
 #include "libs/argparse.hpp"
 #include "logduto.hpp"
 #include "title.hpp"
