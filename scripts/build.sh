@@ -23,6 +23,7 @@ elif [ "$1" = "-d" ]; then
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
         g++ -g -std=c++17 \
+            -pthread \
             -o build/debug/$program_name *.cpp \
             -lssl -lcrypto
     fi
