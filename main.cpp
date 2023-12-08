@@ -252,6 +252,5 @@ bool isInvalidHeader(const string &header)
            header == "LOCAL_ADDR" ||
            header == "LOCAL_PORT" ||
            header == "REMOTE_ADDR" ||
-           header == "REMOTE_PORT" ||
-           header == "User-Agent";
+           header == "REMOTE_PORT";
 }
