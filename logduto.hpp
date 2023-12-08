@@ -8,6 +8,8 @@ string removeLastNewLine(string str);
 
 string removeLastSlash(string str);
 
+string extFromContentType(string contentType);
+
 class ReqData
 {
 private:
@@ -51,8 +53,6 @@ private:
     ResData resData;
     bool saveRequestData = false;
     bool saveResponseData = false;
-
-    string extFromContentType();
 
 public:
     string logsDir = ROOT_LOGS_DIR;

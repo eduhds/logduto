@@ -18,6 +18,16 @@ string removeLastSlash(string str)
     return (!str.empty() && str[str.length() - 1] == '/') ? str.substr(0, str.length() - 1) : str;
 }
 
+string extFromContentType(string contentType)
+{
+    if (contentType == "text/plain")
+        return ".txt";
+
+    int startValue = contentType.find("/") + 1;
+    int endValue = contentType.find(";") - contentType.find("/") - 1;
+    return "." + contentType.substr(startValue, endValue);
+}
+
 ReqData::ReqData(string h, string b, string c)
 {
     headers = removeLastNewLine(h);
@@ -76,18 +86,6 @@ Logduto::Logduto(string mtd, string pth, bool saveReq, bool saveRes)
     saveResponseData = saveRes;
 }
 
-string Logduto::extFromContentType()
-{
-    string contentType = reqData.getContentType();
-
-    if (contentType == "text/plain")
-        return ".txt";
-
-    int startValue = contentType.find("/") + 1;
-    int endValue = contentType.find(";") - contentType.find("/") - 1;
-    return "." + contentType.substr(startValue, endValue);
-}
-
 void Logduto::setReqData(ReqData req)
 {
     reqData = req;
@@ -109,7 +107,6 @@ void Logduto::saveToFile()
         string dateFormat = regex_replace(date, regex(" "), "_");
 
         target_file tfile = resolve_file(path);
-        tfile.extension = extFromContentType();
 
         filesystem::create_directories(logsDir);
 
@@ -144,20 +141,20 @@ void Logduto::saveToFile()
             string reqResDirectories = tfile.path[0] == '/' ? "" : "/";
             reqResDirectories += tfile.path.substr(0, tfile.path.find_last_of("/"));
 
-            if (saveRequestData)
+            if (saveRequestData && !reqData.getBody().empty())
             {
                 reqDir += reqResDirectories;
                 filesystem::create_directories(reqDir);
-                ofstream reqFile(reqDir + "/" + tfile.basename + tfile.extension);
+                ofstream reqFile(reqDir + "/" + tfile.basename + extFromContentType(reqData.getContentType()));
                 reqFile << reqData.getBody();
                 reqFile.close();
             }
 
-            if (saveResponseData)
+            if (saveResponseData && !resData.getBody().empty())
             {
                 resDir += reqResDirectories;
                 filesystem::create_directories(resDir);
-                ofstream resFile(resDir + "/" + tfile.basename + tfile.extension);
+                ofstream resFile(resDir + "/" + tfile.basename + extFromContentType(resData.getContentType()));
                 resFile << resData.getBody();
                 resFile.close();
             }
