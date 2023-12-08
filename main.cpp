@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         string method = req.method;
         string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
 
-        cout << "\n--- " << method << " ---" << endl;
+        cout << "\n\x1B[34m--- " << method << " ---\033[0m" << endl;
         cout << "Path: " << path << endl;
 
         if (method == "OPTIONS")
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 
     cout << title << endl;
 
-    cout << "• Forwarding from http://" << host << ":" << port << " to " << resourceUrl << endl;
+    cout << "• Forwarding from \x1B[32mhttp://" << host << ":" << port << "\033[0m to \x1B[31m" << resourceUrl << "\033[0m" << endl;
 
     server.listen(host, port);
 
