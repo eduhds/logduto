@@ -89,15 +89,59 @@ int main(int argc, char *argv[])
         string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
 
         cout << "\n\x1B[34m--- " << method << " ---\033[0m" << endl;
-        cout << "Path: " << path << endl;
 
         if (method == "OPTIONS")
         {
+            cout << "Path: " << path << endl;
             res.set_header("Access-Control-Allow-Methods", "*");
             res.set_header("Access-Control-Allow-Headers", "*");
             res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
             res.set_header("Connection", "close");
             return;
+        }
+
+        httplib::Result result;
+        httplib::Params params;
+        httplib::Headers headers;
+        string body = "";
+        string queryParams = "";
+        bool withHeaders = false;
+        bool withParams = false;
+        bool withBody = false;
+        bool withHeadersAndParams = false;
+        bool withHeadersAndBody = false;
+
+        // Handle headers
+        if (!req.headers.empty())
+        {
+            withHeaders = true;
+            for (auto &header : req.headers)
+            {
+                if (isInvalidHeader(header.first))
+                    continue;
+                headers.insert({header.first, header.second});
+            }
+        }
+
+        // Handle params
+        if (!req.params.empty())
+        {
+            withParams = true;
+            queryParams = "?";
+            for (auto &param : req.params)
+            {
+                queryParams += param.first + "=" + param.second + "&";
+                params.insert({param.first, param.second});
+            }
+            queryParams.pop_back();
+            path += queryParams;
+        }
+
+        // Handle body
+        if (!req.body.empty())
+        {
+            withBody = true;
+            body = req.body;
         }
 
         Logduto logduto(method, path, saveData, saveData);
@@ -107,48 +151,23 @@ int main(int argc, char *argv[])
             logduto.logsDir = logsDir;
         }
 
-        httplib::Result result;
-        httplib::Params params;
-        httplib::Headers headers;
-        string queryParams = "";
+        withHeadersAndParams = withHeaders && withParams;
+        withHeadersAndBody = withHeaders && withBody;
 
-        // Set params
-        if (!req.body.empty())
-        {
-            params.emplace("json", req.body);
-        }
-
-        if (!req.params.empty())
-        {
-            queryParams = "?";
-            for (auto &param : req.params)
-            {
-                queryParams += param.first + "=" + param.second + "&";
-            }
-            queryParams.pop_back();
-        }
-
-        // Set headers
-        for (auto &header : req.headers)
-        {
-            if (isInvalidHeader(header.first))
-                continue;
-            headers.insert({header.first, header.second});
-        }
-
-        bool withHeaders = !headers.empty();
-        bool withParams = !params.empty();
-        bool withHeadersAndParams = withHeaders && withParams;
+        cout << "Path: " << path << endl;
 
         if (method == "POST")
         {
             if (withHeadersAndParams)
-                result = client.Post(path, headers, req.body, contentType);
-            // result = client.Post(path, headers, params);
+                result = client.Post(path, headers, params);
+            else if (withHeadersAndBody)
+                result = client.Post(path, headers, body, contentType);
             else if (withHeaders)
                 result = client.Post(path, headers);
             else if (withParams)
                 result = client.Post(path, params);
+            else if (withBody)
+                result = client.Post(path, body, contentType);
             else
                 result = client.Post(path);
         }
@@ -156,27 +175,37 @@ int main(int argc, char *argv[])
         {
             if (withHeadersAndParams)
                 result = client.Put(path, headers, params);
+            else if (withHeadersAndBody)
+                result = client.Put(path, headers, body, contentType);
             else if (withParams)
                 result = client.Put(path, params);
+            else if (withBody)
+                result = client.Put(path, body, contentType);
             else
                 result = client.Put(path);
         }
         else if (req.method == "PATCH")
         {
-            result = client.Patch(path);
+            if (withHeadersAndBody)
+                result = client.Patch(path, headers, body, contentType);
+            else if (withBody)
+                result = client.Patch(path, body, contentType);
+            else
+                result = client.Patch(path);
         }
         else if (req.method == "DELETE")
         {
-            if (withHeaders)
+            if (withHeadersAndBody)
+                result = client.Delete(path, headers, body, contentType);
+            else if (withHeaders)
                 result = client.Delete(path, headers);
+            else if (withBody)
+                result = client.Delete(path, body, contentType);
             else
-                result = headers.empty() ? client.Delete(path) : client.Delete(path, headers);
+                result = client.Delete(path);
         }
         else //  Default GET
         {
-            if (queryParams.size() > 0)
-                path += queryParams;
-
             if (withHeaders)
                 result = client.Get(path, headers);
             else
@@ -201,7 +230,7 @@ int main(int argc, char *argv[])
     server.Delete(urlPattern, controller);
     server.Options(urlPattern, controller);
 
-    cout << title << endl;
+    cout << "\x1B[34m" << title << "\033[0m" << endl;
 
     cout << "• Forwarding from \x1B[32mhttp://" << host << ":" << port << "\033[0m to \x1B[31m" << resourceUrl << "\033[0m" << endl;
 
