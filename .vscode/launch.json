@@ -5,7 +5,7 @@
       "name": "Debug",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/${workspaceFolderBasename}",
+      "program": "${workspaceFolder}/build/debug/bin/${workspaceFolderBasename}",
       "args": ["-u", "https://cat-fact.herokuapp.com"],
       "cwd": "${workspaceFolder}",
       "environment": [],
