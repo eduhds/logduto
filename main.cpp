@@ -12,7 +12,7 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "libs/httplib.h"
 
-#define PROGRAM_NAME "program_name"
+#define PROGRAM_NAME "Logduto"
 #define PROGRAM_VERSION "0.0.1"
 #define DEFAULT_HOST "0.0.0.0"
 #define DEFAULT_PORT "8099"
@@ -84,141 +84,149 @@ int main(int argc, char *argv[])
 
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
-        string path = req.matches[0].str();
-        string method = req.method;
-        string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
-
-        cout << "\n\x1B[34m--- " << method << " ---\033[0m" << endl;
-
-        if (method == "OPTIONS")
+        try
         {
+            string path = req.matches[0].str();
+            string method = req.method;
+            string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
+
+            cout << "\n\x1B[34m--- " << method << " ---\033[0m" << endl;
+
+            if (method == "OPTIONS")
+            {
+                cout << "Path: " << path << endl;
+                res.set_header("Access-Control-Allow-Methods", "*");
+                res.set_header("Access-Control-Allow-Headers", "*");
+                res.set_header("Access-Control-Allow-Origin", "*");
+                res.set_header("Connection", "close");
+                return;
+            }
+
+            httplib::Result result;
+            httplib::Params params;
+            httplib::Headers headers;
+            string body = "";
+            string queryParams = "";
+            bool withHeaders = false;
+            bool withParams = false;
+            bool withBody = false;
+            bool withHeadersAndParams = false;
+            bool withHeadersAndBody = false;
+
+            // Handle headers
+            if (!req.headers.empty())
+            {
+                withHeaders = true;
+                for (auto &header : req.headers)
+                {
+                    if (isInvalidHeader(header.first))
+                        continue;
+                    headers.insert({header.first, header.second});
+                }
+            }
+
+            // Handle params
+            if (!req.params.empty())
+            {
+                withParams = true;
+                queryParams = "?";
+                for (auto &param : req.params)
+                {
+                    queryParams += param.first + "=" + param.second + "&";
+                    params.insert({param.first, param.second});
+                }
+                queryParams.pop_back();
+                path += queryParams;
+            }
+
+            // Handle body
+            if (!req.body.empty())
+            {
+                withBody = true;
+                body = req.body;
+            }
+
+            Logduto logduto(method, path, saveData, saveData);
+
+            if (logsDir != "")
+            {
+                logduto.logsDir = logsDir;
+            }
+
+            withHeadersAndParams = withHeaders && withParams;
+            withHeadersAndBody = withHeaders && withBody;
+
             cout << "Path: " << path << endl;
-            res.set_header("Access-Control-Allow-Methods", "*");
-            res.set_header("Access-Control-Allow-Headers", "*");
-            res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
-            res.set_header("Connection", "close");
-            return;
-        }
 
-        httplib::Result result;
-        httplib::Params params;
-        httplib::Headers headers;
-        string body = "";
-        string queryParams = "";
-        bool withHeaders = false;
-        bool withParams = false;
-        bool withBody = false;
-        bool withHeadersAndParams = false;
-        bool withHeadersAndBody = false;
-
-        // Handle headers
-        if (!req.headers.empty())
-        {
-            withHeaders = true;
-            for (auto &header : req.headers)
+            if (method == "POST")
             {
-                if (isInvalidHeader(header.first))
-                    continue;
-                headers.insert({header.first, header.second});
+                if (withHeadersAndParams)
+                    result = client.Post(path, headers, params);
+                else if (withHeadersAndBody)
+                    result = client.Post(path, headers, body, contentType);
+                else if (withHeaders)
+                    result = client.Post(path, headers);
+                else if (withParams)
+                    result = client.Post(path, params);
+                else if (withBody)
+                    result = client.Post(path, body, contentType);
+                else
+                    result = client.Post(path);
             }
-        }
-
-        // Handle params
-        if (!req.params.empty())
-        {
-            withParams = true;
-            queryParams = "?";
-            for (auto &param : req.params)
+            else if (req.method == "PUT")
             {
-                queryParams += param.first + "=" + param.second + "&";
-                params.insert({param.first, param.second});
+                if (withHeadersAndParams)
+                    result = client.Put(path, headers, params);
+                else if (withHeadersAndBody)
+                    result = client.Put(path, headers, body, contentType);
+                else if (withParams)
+                    result = client.Put(path, params);
+                else if (withBody)
+                    result = client.Put(path, body, contentType);
+                else
+                    result = client.Put(path);
             }
-            queryParams.pop_back();
-            path += queryParams;
-        }
+            else if (req.method == "PATCH")
+            {
+                if (withHeadersAndBody)
+                    result = client.Patch(path, headers, body, contentType);
+                else if (withBody)
+                    result = client.Patch(path, body, contentType);
+                else
+                    result = client.Patch(path);
+            }
+            else if (req.method == "DELETE")
+            {
+                if (withHeadersAndBody)
+                    result = client.Delete(path, headers, body, contentType);
+                else if (withHeaders)
+                    result = client.Delete(path, headers);
+                else if (withBody)
+                    result = client.Delete(path, body, contentType);
+                else
+                    result = client.Delete(path);
+            }
+            else //  Default GET
+            {
+                if (withHeaders)
+                    result = client.Get(path, headers);
+                else
+                    result = client.Get(path);
+            }
 
-        // Handle body
-        if (!req.body.empty())
-        {
-            withBody = true;
-            body = req.body;
-        }
+            if (result)
+            {
+                handleResultSuccess(logduto, req, res, result);
+                return;
+            }
 
-        Logduto logduto(method, path, saveData, saveData);
-
-        if (logsDir != "")
-        {
-            logduto.logsDir = logsDir;
+            throw runtime_error("Cannot obtain result from " + path + ".");
         }
-
-        withHeadersAndParams = withHeaders && withParams;
-        withHeadersAndBody = withHeaders && withBody;
-
-        cout << "Path: " << path << endl;
-
-        if (method == "POST")
+        catch (const exception &e)
         {
-            if (withHeadersAndParams)
-                result = client.Post(path, headers, params);
-            else if (withHeadersAndBody)
-                result = client.Post(path, headers, body, contentType);
-            else if (withHeaders)
-                result = client.Post(path, headers);
-            else if (withParams)
-                result = client.Post(path, params);
-            else if (withBody)
-                result = client.Post(path, body, contentType);
-            else
-                result = client.Post(path);
+            handleResultError(res);
+            cerr << e.what() << '\n';
         }
-        else if (req.method == "PUT")
-        {
-            if (withHeadersAndParams)
-                result = client.Put(path, headers, params);
-            else if (withHeadersAndBody)
-                result = client.Put(path, headers, body, contentType);
-            else if (withParams)
-                result = client.Put(path, params);
-            else if (withBody)
-                result = client.Put(path, body, contentType);
-            else
-                result = client.Put(path);
-        }
-        else if (req.method == "PATCH")
-        {
-            if (withHeadersAndBody)
-                result = client.Patch(path, headers, body, contentType);
-            else if (withBody)
-                result = client.Patch(path, body, contentType);
-            else
-                result = client.Patch(path);
-        }
-        else if (req.method == "DELETE")
-        {
-            if (withHeadersAndBody)
-                result = client.Delete(path, headers, body, contentType);
-            else if (withHeaders)
-                result = client.Delete(path, headers);
-            else if (withBody)
-                result = client.Delete(path, body, contentType);
-            else
-                result = client.Delete(path);
-        }
-        else //  Default GET
-        {
-            if (withHeaders)
-                result = client.Get(path, headers);
-            else
-                result = client.Get(path);
-        }
-
-        if (result)
-        {
-            handleResultSuccess(logduto, req, res, result);
-            return;
-        }
-
-        handleResultError(res);
     };
 
     string urlPattern = "(.*)";
@@ -266,12 +274,14 @@ void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib:
     logduto.saveToFile();
 
     res.status = result->status;
-    res.set_header("Access-Control-Allow-Origin", "*"); // req.get_header_value("Origin").c_str()
+    res.set_header("Access-Control-Allow-Origin", "*");
     res.set_content(result->body, resCtnType);
 }
 
 void handleResultError(httplib::Response &res)
 {
+    cout << "\n\x1B[31m--- Error ---\033[0m" << endl;
+    res.status = 599;
     res.set_content("--- Error ---", "text/plain");
 }
 
