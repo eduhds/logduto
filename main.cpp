@@ -1,6 +1,7 @@
 /**
  * Logduto
- * Salva requisições em arquivo
+ * An unpretentious HTTP request logger.
+ * Created by Eduardo H. da Silva
  */
 
 #include <iostream>
