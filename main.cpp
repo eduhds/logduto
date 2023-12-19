@@ -1,7 +1,7 @@
 /**
  * Logduto
  * An unpretentious HTTP request logger.
- * Created by Eduardo H. da Silva
+ * Created by Eduardo H. da Silva on 30/08/2023
  */
 
 #include <iostream>
