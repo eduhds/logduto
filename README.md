@@ -6,6 +6,10 @@
 
 An unpretentious HTTP request logger.
 
+## Install
+
+Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
+
 ## Usage
 
 ```sh
