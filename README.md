@@ -17,7 +17,7 @@ Download binary executable from [Releases](https://github.com/eduhds/logduto/rel
 logduto -u <url>
 
 # Specify Logduto server host and/or port
-logduto -u <url> -h localhost -p 9000
+logduto -u <url> -h <host> -p <port>
 
 # Specify directory to save reports
 logduto -u <url> -l <path to directory>
