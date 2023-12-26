@@ -1,6 +1,7 @@
 #!/bin/sh
 
 program_name="$(basename $(pwd))"
+version=0.0.1
 
 mkdir -p build
 
@@ -40,6 +41,14 @@ if [ "$1" = "-r" ]; then
                 -o build/release/bin/$program_name *.cpp \
                 -L./build/release/lib -lssl -lcrypto
         fi
+    fi
+
+    if [ $? -ne 0 ]; then
+        echo "Failed to compile"; exit 1
+    else
+        tar -C build/release/bin \
+            -czvf build/release/bin/$program_name-$version-$(uname).tar.gz \
+            $program_name
     fi
 elif [ "$1" = "-d" ]; then
     # Build for debug
