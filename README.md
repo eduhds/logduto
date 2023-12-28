@@ -16,6 +16,8 @@ wget https://github.com/eduhds/logduto/releases/download/0.0.1/Logduto-0.0.1-$(u
 tar -xf Logduto*.tar.gz
 
 chmod +x logduto
+
+sudo mv logduto /usr/local/bin
 ```
 
 ## Usage
