@@ -48,7 +48,7 @@ if [ "$1" = "-r" ]; then
     else
         tar -C build/release/bin \
             -czvf build/release/bin/$program_name-$version-$(uname).tar.gz \
-            $program_name
+            $program_name > /dev/null
     fi
 elif [ "$1" = "-d" ]; then
     # Build for debug
