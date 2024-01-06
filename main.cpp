@@ -17,6 +17,7 @@
 #define PROGRAM_VERSION "0.0.1"
 #define DEFAULT_HOST "0.0.0.0"
 #define DEFAULT_PORT "8099"
+#define CLIENT_TIMEOUT 10
 
 using namespace std;
 
@@ -82,6 +83,9 @@ int main(int argc, char *argv[])
     httplib::Client client(resourceUrl);
 
     client.enable_server_certificate_verification(false);
+    client.set_connection_timeout(CLIENT_TIMEOUT, 0);
+    client.set_read_timeout(CLIENT_TIMEOUT, 0);
+    client.set_write_timeout(CLIENT_TIMEOUT, 0);
 
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
@@ -221,7 +225,8 @@ int main(int argc, char *argv[])
                 return;
             }
 
-            throw runtime_error("Cannot obtain result from " + path + ".");
+            auto err = result.error();
+            throw runtime_error("Cannot obtain result from " + path + ".\n" + httplib::to_string(err));
         }
         catch (const exception &e)
         {
