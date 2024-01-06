@@ -10,6 +10,16 @@ An unpretentious HTTP request logger.
 
 Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
 
+```sh
+wget https://github.com/eduhds/logduto/releases/download/0.0.1/Logduto-0.0.1-$(uname).tar.gz
+
+tar -xf Logduto*.tar.gz
+
+chmod +x logduto
+
+sudo mv logduto /usr/local/bin
+```
+
 ## Usage
 
 ```sh
