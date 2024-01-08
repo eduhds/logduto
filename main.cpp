@@ -17,7 +17,7 @@
 #define PROGRAM_VERSION "0.0.1"
 #define DEFAULT_HOST "0.0.0.0"
 #define DEFAULT_PORT "8099"
-#define CLIENT_TIMEOUT 10
+#define DEFAULT_TIMEOUT "10"
 
 using namespace std;
 
@@ -52,9 +52,13 @@ int main(int argc, char *argv[])
         .help("specify logs directory")
         .default_value("");
 
+    program.add_argument("-t", "--timeout")
+        .help("client timeout in seconds")
+        .default_value(DEFAULT_TIMEOUT);
+
     string resourceUrl, host, logsDir;
     bool saveData = false;
-    int port;
+    int port, timeout;
 
     try
     {
@@ -65,6 +69,7 @@ int main(int argc, char *argv[])
         port = stoi(program.get<string>("--port"));
         saveData = program.get<bool>("--data");
         logsDir = program.get<string>("--logs");
+        timeout = stoi(program.get<string>("--timeout"));
 
         if (!logsDir.empty())
         {
@@ -83,9 +88,9 @@ int main(int argc, char *argv[])
     httplib::Client client(resourceUrl);
 
     client.enable_server_certificate_verification(false);
-    client.set_connection_timeout(CLIENT_TIMEOUT, 0);
-    client.set_read_timeout(CLIENT_TIMEOUT, 0);
-    client.set_write_timeout(CLIENT_TIMEOUT, 0);
+    client.set_connection_timeout(timeout, 0);
+    client.set_read_timeout(timeout, 0);
+    client.set_write_timeout(timeout, 0);
 
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
