@@ -16,15 +16,15 @@ if [ "$1" = "-r" ]; then
     rm -rf build/release 2> /dev/null || true && mkdir -p build/release
     mkdir build/release/{bin,lib}
 
+    build_libs
+    g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
+
     if [ "$(uname)" = "Darwin" ]; then
         g++ -O3 -std=c++17 \
-            -o build/release/bin/$program_name *.cpp \
+            -o build/release/bin/$program_name \
+            build/release/lib/*.o \
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
-        build_libs
-
-        g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
-
         if [ "$2" = "-s" ]; then
             # Copy static libs
             cp -L /usr/lib/x86_64-linux-gnu/{libssl,libcrypto}.a build/release/lib
@@ -65,15 +65,15 @@ elif [ "$1" = "-d" ]; then
     rm -rf build/debug 2> /dev/null || true && mkdir -p build/debug
     mkdir -p build/debug/{bin,lib}
 
+    build_libs
+    g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
+
     if [ "$(uname)" = "Darwin" ]; then
         g++ -g -std=c++17 \
-            -o build/debug/bin/$program_name *.cpp \
+            -o build/debug/bin/$program_name \
+            build/debug/lib/*.o \
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
-        build_libs
-
-        g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
-
         g++ -g -std=c++17 \
             -pthread \
             -o build/debug/bin/$program_name \
