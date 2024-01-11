@@ -50,3 +50,4 @@ sh scripts/build.sh -r
 
 - [yhirose/cpp-httplib](https://github.com/yhirose/cpp-httplib)
 - [p-ranav/argparse](https://github.com/p-ranav/argparse)
+- [termbox/termbox2](https://github.com/termbox/termbox2)
