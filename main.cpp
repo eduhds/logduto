@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
     int y = 0;
 
     tb_init();
+    string emptyStr(tb_width(), ' ');
 
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
@@ -106,9 +107,11 @@ int main(int argc, char *argv[])
             string method = req.method;
             string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
 
+            // Clear previous result
+            tb_printf(0, y, 0, 0, emptyStr.c_str());
+            tb_printf(0, y + 1, 0, 0, emptyStr.c_str());
+
             tb_printf(0, y, 0, TB_YELLOW, " %s ", method.c_str());
-            string emptyStr(tb_width(), ' ');
-            tb_printf(0, y + 1, 0, 0, emptyStr.c_str()); // Clear previous result
             tb_present();
 
             if (method == "OPTIONS")
