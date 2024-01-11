@@ -3,6 +3,12 @@
 program_name="$(basename $(pwd))"
 version=0.0.1
 
+build_libs() {
+    gcc -c -std=c99 -o build/debug/lib/termbox2.o libs/termbox2.c
+    g++ -c -std=c++17 -o build/debug/lib/argparse.o libs/argparse.cpp
+    g++ -c -std=c++17 -o build/debug/lib/httplib.o libs/httplib.cpp
+}
+
 mkdir -p build
 
 if [ "$1" = "-r" ]; then
@@ -15,6 +21,10 @@ if [ "$1" = "-r" ]; then
             -o build/release/bin/$program_name *.cpp \
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
+        build_libs
+
+        g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
+
         if [ "$2" = "-s" ]; then
             # Copy static libs
             cp -L /usr/lib/x86_64-linux-gnu/{libssl,libcrypto}.a build/release/lib
@@ -25,7 +35,7 @@ if [ "$1" = "-r" ]; then
 
             g++ -O3 -std=c++17 -static-libgcc -static-libstdc++ \
                 -pthread \
-                *.cpp \
+                build/debug/lib/*.o \
                 -L build/release/lib -l:libssl.a -l:libcrypto.a -ldl \
                 -o build/release/bin/$program_name
         else
@@ -60,9 +70,7 @@ elif [ "$1" = "-d" ]; then
             -o build/debug/bin/$program_name *.cpp \
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
-        gcc -c -std=c99 -o build/debug/lib/termbox2.o libs/termbox2.c
-        g++ -c -std=c++17 -o build/debug/lib/argparse.o libs/argparse.cpp
-        g++ -c -std=c++17 -o build/debug/lib/httplib.o libs/httplib.cpp
+        build_libs
 
         g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
 

@@ -6,12 +6,13 @@
 
 #include <iostream>
 #include <filesystem>
+#include <thread>
 #include "libs/argparse.hpp"
-#include "logduto.hpp"
-#include "title.hpp"
-
+#include "libs/termbox2.h"
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "libs/httplib.h"
+#include "logduto.hpp"
+#include "title.hpp"
 
 #define PROGRAM_NAME "Logduto"
 #define PROGRAM_VERSION "0.0.1"
@@ -92,6 +93,11 @@ int main(int argc, char *argv[])
     client.set_read_timeout(timeout, 0);
     client.set_write_timeout(timeout, 0);
 
+    struct tb_event ev;
+    int y = 0;
+
+    tb_init();
+
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
         try
@@ -100,11 +106,17 @@ int main(int argc, char *argv[])
             string method = req.method;
             string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
 
-            cout << "\n\x1B[34m--- " << method << " ---\033[0m" << endl;
+            tb_printf(0, y, 0, TB_YELLOW, " %s ", method.c_str());
+            string emptyStr(tb_width(), ' ');
+            tb_printf(0, y + 1, 0, 0, emptyStr.c_str()); // Clear previous result
+            tb_present();
 
             if (method == "OPTIONS")
             {
-                cout << "Path: " << path << endl;
+                tb_printf(method.size() + 3, y, 0, 0, path.c_str());
+                tb_printf(0, y + 1, 0, 0, emptyStr.c_str());
+                tb_present();
+
                 res.set_header("Access-Control-Allow-Methods", "*");
                 res.set_header("Access-Control-Allow-Headers", "*");
                 res.set_header("Access-Control-Allow-Origin", "*");
@@ -166,7 +178,8 @@ int main(int argc, char *argv[])
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
 
-            cout << "Path: " << path << endl;
+            tb_printf(method.size() + 3, y, 0, 0, path.c_str());
+            tb_present();
 
             if (method == "POST")
             {
@@ -226,6 +239,8 @@ int main(int argc, char *argv[])
 
             if (result)
             {
+                tb_printf(0, y + 1, TB_GREEN, 0, "%d - %s", result->status, result->reason.c_str());
+                tb_present();
                 handleResultSuccess(logduto, req, res, result);
                 return;
             }
@@ -236,7 +251,9 @@ int main(int argc, char *argv[])
         catch (const exception &e)
         {
             handleResultError(res);
-            cerr << e.what() << '\n';
+            string err = e.what();
+            tb_printf(0, y + 1, TB_RED, 0, "%s", err.c_str());
+            tb_present();
         }
     };
 
@@ -249,11 +266,55 @@ int main(int argc, char *argv[])
     server.Delete(urlPattern, controller);
     server.Options(urlPattern, controller);
 
-    cout << "\x1B[34m" << title << "\033[0m" << endl;
+    bool serverRunning = false;
+    string serverError = "";
 
-    cout << "• Forwarding from \x1B[32mhttp://" << host << ":" << port << "\033[0m to \x1B[31m" << resourceUrl << "\033[0m" << endl;
+    auto startServer = [&]()
+    {
+        try
+        {
+            serverRunning = true;
+            server.listen(host, port);
+        }
+        catch (const exception &e)
+        {
+            serverError = e.what();
+            serverRunning = false;
+        }
+    };
 
-    server.listen(host, port);
+    thread t(startServer);
+    t.detach();
+
+    for (const string s : title_array)
+    {
+        tb_printf(0, y++, TB_BLUE, 0, s.c_str());
+    }
+
+    string from = "http://" + host + ":" + to_string(port);
+    string to = resourceUrl;
+
+    tb_printf(0, y++, 0, 0, "");
+    tb_printf(0, y, 0, 0, "Forwarding from ");
+    tb_printf(16, y, TB_GREEN, 0, from.c_str());
+    tb_printf(from.size() + 16, y, 0, 0, " to ");
+    tb_printf(from.size() + 20, y++, TB_RED, 0, to.c_str());
+    tb_printf(0, y++, 0, 0, "Press Esc or Ctrl-C to quit");
+    tb_printf(0, y++, 0, 0, "");
+    tb_present();
+
+    while (true)
+    {
+        tb_poll_event(&ev);
+
+        if (ev.key == 3 || ev.key == 27)
+        {
+            tb_printf(0, y, 0, 0, "Stoping...");
+            tb_present();
+            tb_shutdown();
+            return 0;
+        }
+    }
 
     return 0;
 }
@@ -277,8 +338,6 @@ void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib:
         resHeaders += header.first + ": " + header.second + "\n";
     }
 
-    cout << "Status: " << result->status << endl;
-
     logduto.setReqData(ReqData(reqHeaders, req.body.data(), reqCtnType));
     logduto.setResData(ResData(result->status, resHeaders, result->body.data(), resCtnType));
 
@@ -291,7 +350,6 @@ void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib:
 
 void handleResultError(httplib::Response &res)
 {
-    cout << "\n\x1B[31m--- Error ---\033[0m" << endl;
     res.status = 599;
     res.set_content("--- Error ---", "text/plain");
 }
