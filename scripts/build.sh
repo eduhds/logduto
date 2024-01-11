@@ -53,16 +53,23 @@ if [ "$1" = "-r" ]; then
 elif [ "$1" = "-d" ]; then
     # Build for debug
     rm -rf build/debug 2> /dev/null || true && mkdir -p build/debug
-    mkdir build/debug/bin
+    mkdir -p build/debug/{bin,lib}
 
     if [ "$(uname)" = "Darwin" ]; then
         g++ -g -std=c++17 \
             -o build/debug/bin/$program_name *.cpp \
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
+        gcc -c -std=c99 -o build/debug/lib/termbox2.o libs/termbox2.c
+        g++ -c -std=c++17 -o build/debug/lib/argparse.o libs/argparse.cpp
+        g++ -c -std=c++17 -o build/debug/lib/httplib.o libs/httplib.cpp
+
+        g++ -c -std=c++17 -o build/debug/lib/main.o main.cpp
+
         g++ -g -std=c++17 \
             -pthread \
-            -o build/debug/bin/$program_name *.cpp \
+            -o build/debug/bin/$program_name \
+            build/debug/lib/*.o \
             -lssl -lcrypto
     fi
 else
