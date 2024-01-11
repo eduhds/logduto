@@ -22,7 +22,7 @@ if [ "$1" = "-r" ]; then
     if [ "$(uname)" = "Darwin" ]; then
         g++ -O3 -std=c++17 \
             -o build/release/bin/$program_name \
-            build/release/lib/*.o \
+            build/debug/lib/*.o \
             -lssl -lcrypto -framework CoreFoundation -framework Security
     else
         if [ "$2" = "-s" ]; then
