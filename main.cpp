@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
             }
 
             auto err = result.error();
-            throw runtime_error("Cannot obtain result from " + path + ".\n" + httplib::to_string(err));
+            throw runtime_error("Cannot obtain result from " + path + ": " + httplib::to_string(err));
         }
         catch (const exception &e)
         {
