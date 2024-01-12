@@ -23,17 +23,23 @@ sudo mv logduto /usr/local/bin
 ## Usage
 
 ```sh
-# With default options
-logduto -u <url>
+logduto https://cat-fact.herokuapp.com
+```
 
-# Specify Logduto server host and/or port
-logduto -u <url> -h <host> -p <port>
+```
+Usage: Logduto [--help] [--version] [--host VAR] [--port VAR] [--logs VAR] [--timeout VAR] [--data] url
 
-# Specify directory to save reports
-logduto -u <url> -l <path to directory>
+Positional arguments:
+  url            URL to redirect all requests to [required]
 
-# Save request/response as file with content type (like .json)
-logduto -u <url> -d
+Optional arguments:
+  -h, --help     shows help message and exits 
+  -v, --version  prints version information and exits 
+  -H, --host     specify host for the server [nargs=0..1] [default: "0.0.0.0"]
+  -p, --port     specify port for the server [nargs=0..1] [default: "8099"]
+  -l, --logs     specify the directory where to save logs, requests and responses files [nargs=0..1] [default: "./logs"]
+  -t, --timeout  specify timeout for requests [nargs=0..1] [default: "10"]
+  -d, --data     saves requests and responses to files
 ```
 
 ## Developement
