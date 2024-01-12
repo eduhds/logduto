@@ -100,26 +100,76 @@ int main(int argc, char *argv[])
     tb_init();
     string emptyStr(tb_width(), ' ');
 
+    const int maxReports = 5;
+    string reports[maxReports][2];
+
+    int pos = 0;
+
+    auto updateRequestsUI = [&](string method, string path)
+    {
+        if (pos == maxReports - 1)
+        {
+            if (!reports[pos][0].empty())
+            {
+                for (int i = 0; i < pos; i++)
+                {
+                    reports[i][0] = reports[i + 1][0];
+                    reports[i][1] = reports[i + 1][1];
+                }
+            }
+        }
+
+        reports[pos][0] = method;
+        reports[pos][1] = path;
+
+        for (int i = 0; i <= pos; i++)
+        {
+            // Clear previous result
+            tb_printf(0, y + i, 0, 0, emptyStr.c_str());
+            tb_printf(0, y + (i + 1), 0, 0, emptyStr.c_str());
+
+            tb_printf(0, y + i, 0, TB_YELLOW, " %s ", reports[i][0].c_str());
+            tb_printf(reports[i][0].size() + 3, y + i, 0, 0, reports[i][1].c_str());
+        }
+
+        tb_present();
+
+        if (pos < maxReports - 1)
+        {
+            pos++;
+        }
+    };
+
+    auto updateStatusUI = [&](bool error, string method, string path, int status, string message)
+    {
+        tb_printf(0, y + 7, 0, 0, emptyStr.c_str());
+        tb_printf(0, y + 8, 0, 0, emptyStr.c_str());
+
+        if (error)
+        {
+            tb_printf(0, y + 7, TB_RED, 0, "%s", message.c_str());
+        }
+        else
+        {
+            tb_printf(0, y + 7, TB_GREEN, 0, "[%s] %s", method.c_str(), path.c_str());
+            tb_printf(0, y + 8, TB_GREEN, 0, "%d - %s", status, message.c_str());
+        }
+
+        tb_present();
+    };
+
     auto controller = [&](const httplib::Request &req, httplib::Response &res)
     {
+        string path = req.matches[0].str();
+        string method = req.method;
+        string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
+
         try
         {
-            string path = req.matches[0].str();
-            string method = req.method;
-            string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
-
-            // Clear previous result
-            tb_printf(0, y, 0, 0, emptyStr.c_str());
-            tb_printf(0, y + 1, 0, 0, emptyStr.c_str());
-
-            tb_printf(0, y, 0, TB_YELLOW, " %s ", method.c_str());
-            tb_present();
 
             if (method == "OPTIONS")
             {
-                tb_printf(method.size() + 3, y, 0, 0, path.c_str());
-                tb_printf(0, y + 1, 0, 0, emptyStr.c_str());
-                tb_present();
+                updateRequestsUI(method, path);
 
                 res.set_header("Access-Control-Allow-Methods", "*");
                 res.set_header("Access-Control-Allow-Headers", "*");
@@ -178,8 +228,7 @@ int main(int argc, char *argv[])
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
 
-            tb_printf(method.size() + 3, y, 0, 0, path.c_str());
-            tb_present();
+            updateRequestsUI(method, path);
 
             if (method == "POST")
             {
@@ -239,8 +288,7 @@ int main(int argc, char *argv[])
 
             if (result)
             {
-                tb_printf(0, y + 1, TB_GREEN, 0, "%d - %s", result->status, result->reason.c_str());
-                tb_present();
+                updateStatusUI(false, method, path, result->status, result->reason);
                 handleResultSuccess(logduto, req, res, result);
                 return;
             }
@@ -250,10 +298,9 @@ int main(int argc, char *argv[])
         }
         catch (const exception &e)
         {
-            handleResultError(res);
             string err = e.what();
-            tb_printf(0, y + 1, TB_RED, 0, "%s", err.c_str());
-            tb_present();
+            updateStatusUI(true, method, path, 0, err);
+            handleResultError(res);
         }
     };
 
@@ -293,6 +340,7 @@ int main(int argc, char *argv[])
 
     string from = "http://" + host + ":" + to_string(port);
     string to = resourceUrl;
+    string statusBar(73, ' ');
 
     tb_printf(0, y++, 0, 0, "");
     tb_printf(0, y, 0, 0, "Forwarding from ");
@@ -301,6 +349,8 @@ int main(int argc, char *argv[])
     tb_printf(from.size() + 20, y++, TB_RED, 0, to.c_str());
     tb_printf(0, y++, 0, 0, "Press Esc or Ctrl-C to quit");
     tb_printf(0, y++, 0, 0, "");
+    tb_printf(0, y + 6, 0, TB_BLUE, statusBar.c_str());
+
     tb_present();
 
     while (true)
