@@ -5,8 +5,6 @@
 #include <regex>
 #include "targetfile.hpp"
 
-#define ROOT_LOGS_DIR "./logs"
-
 using namespace std;
 
 string removeLastNewLine(string str);
@@ -60,7 +58,7 @@ private:
     bool saveResponseData = false;
 
 public:
-    string logsDir = ROOT_LOGS_DIR;
+    string logsDir;
 
     Logduto(string mtd, string pth, bool saveReq, bool saveRes);
 

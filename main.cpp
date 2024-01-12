@@ -19,6 +19,7 @@
 #define DEFAULT_HOST "0.0.0.0"
 #define DEFAULT_PORT "8099"
 #define DEFAULT_TIMEOUT "10"
+#define DEFAULT_LOGS_DIR "./logs"
 
 using namespace std;
 
@@ -32,30 +33,30 @@ int main(int argc, char *argv[])
 {
     argparse::ArgumentParser program(PROGRAM_NAME, PROGRAM_VERSION);
 
-    program.add_argument("-u", "--url")
-        .help("resource url")
+    program.add_argument("url")
+        .help("URL to redirect all requests to")
         .required();
 
     program.add_argument("-H", "--host")
-        .help("specify host")
+        .help("specify host for the server")
         .default_value(DEFAULT_HOST);
 
     program.add_argument("-p", "--port")
-        .help("specify port")
+        .help("specify port for the server")
         .default_value(DEFAULT_PORT);
 
-    program.add_argument("-d", "--data")
-        .help("save request and response files")
-        .default_value(false)
-        .implicit_value(true);
-
     program.add_argument("-l", "--logs")
-        .help("specify logs directory")
-        .default_value("");
+        .help("specify the directory where to save logs, requests and responses files")
+        .default_value(DEFAULT_LOGS_DIR);
 
     program.add_argument("-t", "--timeout")
-        .help("client timeout in seconds")
+        .help("specify timeout for the client")
         .default_value(DEFAULT_TIMEOUT);
+
+    program.add_argument("-d", "--data")
+        .help("saves requests and responses to files")
+        .default_value(false)
+        .implicit_value(true);
 
     string resourceUrl, host, logsDir;
     bool saveData = false;
@@ -65,14 +66,14 @@ int main(int argc, char *argv[])
     {
         program.parse_args(argc, argv);
 
-        resourceUrl = program.get<string>("--url");
+        resourceUrl = program.get<string>("url");
         host = program.get<string>("--host");
         port = stoi(program.get<string>("--port"));
         saveData = program.get<bool>("--data");
         logsDir = program.get<string>("--logs");
         timeout = stoi(program.get<string>("--timeout"));
 
-        if (!logsDir.empty())
+        if (logsDir != DEFAULT_LOGS_DIR)
         {
             if (!filesystem::is_directory(logsDir))
                 throw runtime_error("Specified logs directory is not a directory\n");
@@ -172,11 +173,7 @@ int main(int argc, char *argv[])
             }
 
             Logduto logduto(method, path, saveData, saveData);
-
-            if (logsDir != "")
-            {
-                logduto.logsDir = logsDir;
-            }
+            logduto.logsDir = logsDir;
 
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
