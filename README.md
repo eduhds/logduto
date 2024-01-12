@@ -11,7 +11,7 @@ An unpretentious HTTP request logger.
 Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
 
 ```sh
-wget https://github.com/eduhds/logduto/releases/download/0.0.1/Logduto-0.0.1-$(uname).tar.gz
+wget https://github.com/eduhds/logduto/releases/download/0.0.2/Logduto-0.0.2-$(uname).tar.gz
 
 tar -xf Logduto*.tar.gz
 
@@ -33,8 +33,8 @@ Positional arguments:
   url            URL to redirect all requests to [required]
 
 Optional arguments:
-  -h, --help     shows help message and exits 
-  -v, --version  prints version information and exits 
+  -h, --help     shows help message and exits
+  -v, --version  prints version information and exits
   -H, --host     specify host for the server [nargs=0..1] [default: "0.0.0.0"]
   -p, --port     specify port for the server [nargs=0..1] [default: "8099"]
   -l, --logs     specify the directory where to save logs, requests and responses files [nargs=0..1] [default: "./logs"]

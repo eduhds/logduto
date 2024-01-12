@@ -1,7 +1,7 @@
 #!/bin/sh
 
 program_name="$(basename $(pwd))"
-version=0.0.1
+version=0.0.2
 
 build_libs() {
     lib_dir="build/$1/lib"
