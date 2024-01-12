@@ -4,7 +4,7 @@
     {
       "type": "cppbuild",
       "label": "build-debug",
-      "command": "sh",
+      "command": "bash",
       "args": ["scripts/build.sh", "-d"],
       "problemMatcher": [],
       "group": {
@@ -15,7 +15,7 @@
     {
       "type": "cppbuild",
       "label": "build-release",
-      "command": "sh",
+      "command": "bash",
       "args": ["scripts/build.sh", "-r"],
       "problemMatcher": [],
       "group": {
@@ -32,7 +32,7 @@
     {
       "label": "package",
       "type": "shell",
-      "command": "sh scripts/package.sh",
+      "command": "bash scripts/package.sh",
       "problemMatcher": []
     }
   ]
