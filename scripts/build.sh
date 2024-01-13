@@ -59,7 +59,7 @@ if [ "$1" = "-r" ]; then
         echo "Failed to compile"; exit 1
     else
         tar -C build/release/bin \
-            -czvf build/release/bin/$program_name-$version-$(uname).tar.gz \
+            -czvf build/release/bin/${program_name^}-$version-$(uname).tar.gz \
             $program_name > /dev/null
     fi
 elif [ "$1" = "-d" ]; then
