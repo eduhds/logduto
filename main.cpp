@@ -94,15 +94,14 @@ int main(int argc, char *argv[])
     client.set_read_timeout(timeout, 0);
     client.set_write_timeout(timeout, 0);
 
-    struct tb_event ev;
-    int y = 0;
-
     tb_init();
-    string emptyStr(tb_width(), ' ');
 
-    const int maxReports = tb_height() - 13;
+    struct tb_event ev;
+    int y = 0, w = tb_width(), h = tb_height();
+    string emptyStr(w, ' ');
+
+    int maxReports = h - 13;
     string reports[maxReports][2];
-
     int pos = 0;
 
     auto updateRequestsUI = [&](string method, string path)
