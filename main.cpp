@@ -26,6 +26,8 @@ using namespace std;
 string resourceUrl, host, logsDir;
 bool saveData = false;
 int port, timeout;
+const int maxReports = 100;
+const int fixedLines = 13;
 
 void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
 
@@ -34,6 +36,10 @@ void handleResultError(httplib::Response &res);
 bool isInvalidHeader(const string &header);
 
 int printUI(int w, int h);
+
+int calcFreeLines(int h);
+
+int calcMaxResultLines(int freeLines);
 
 int main(int argc, char *argv[])
 {
@@ -100,15 +106,14 @@ int main(int argc, char *argv[])
 
     struct tb_event ev;
     int y = 0, w = tb_width(), h = tb_height();
-    string emptyStr(w, ' ');
-
-    int maxReports = h - 13 > 0 ? h - 13 : 1;
+    int freeLines = calcFreeLines(h);
+    int maxResultLines = calcMaxResultLines(freeLines);
     string reports[maxReports][2];
     int pos = 0;
 
     auto printRequestsUI = [&](string method, string path)
     {
-        if (maxReports <= 1)
+        if (maxResultLines < 1)
             return;
 
         if (pos == maxReports - 1)
@@ -126,14 +131,19 @@ int main(int argc, char *argv[])
         reports[pos][0] = method;
         reports[pos][1] = path;
 
-        for (int i = 0; i <= pos; i++)
+        string emptyStr(w, ' ');
+        int start = pos > maxResultLines ? pos - maxResultLines : 0;
+        int line = 0;
+
+        for (int i = start; i <= pos; i++)
         {
             // Clear previous result
-            tb_printf(0, y + i, 0, 0, emptyStr.c_str());
-            tb_printf(0, y + (i + 1), 0, 0, emptyStr.c_str());
+            tb_printf(0, y + line, 0, 0, emptyStr.c_str());
+            tb_printf(0, y + (line + 1), 0, 0, emptyStr.c_str());
 
-            tb_printf(0, y + i, 0, TB_YELLOW, " %s ", reports[i][0].c_str());
-            tb_printf(reports[i][0].size() + 3, y + i, 0, 0, reports[i][1].c_str());
+            tb_printf(0, y + line, 0, TB_YELLOW, " %s ", reports[i][0].c_str());
+            tb_printf(reports[i][0].size() + 3, y + line, 0, 0, reports[i][1].c_str());
+            line++;
         }
 
         tb_present();
@@ -146,6 +156,7 @@ int main(int argc, char *argv[])
 
     auto printResultsUI = [&](bool error, string method, string path, int status, string message)
     {
+        string emptyStr(w, ' ');
         int firstResultLine = h - 3, secondResultLine = h - 2;
 
         tb_printf(0, firstResultLine, 0, 0, emptyStr.c_str());
@@ -349,6 +360,16 @@ int main(int argc, char *argv[])
         {
             w = ev.w;
             h = ev.h;
+            pos = 0;
+            freeLines = calcFreeLines(h);
+            maxResultLines = calcMaxResultLines(freeLines);
+
+            for (int i = 0; i < maxReports; i++)
+            {
+                reports[i][0] = "";
+                reports[i][1] = "";
+            }
+            
             tb_clear();
             y = printUI(w, h);
         }
@@ -436,4 +457,15 @@ int printUI(int w, int h)
     tb_present();
 
     return y;
+}
+
+int calcFreeLines(int h)
+{
+    int freeLines = h - fixedLines;
+    return freeLines > 0 ? freeLines : 0;
+}
+
+int calcMaxResultLines(int freeLines)
+{
+    return freeLines < maxReports ? freeLines : maxReports;
 }
