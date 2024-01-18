@@ -23,11 +23,17 @@
 
 using namespace std;
 
+string resourceUrl, host, logsDir;
+bool saveData = false;
+int port, timeout;
+
 void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
 
 void handleResultError(httplib::Response &res);
 
 bool isInvalidHeader(const string &header);
+
+int printUI(int w, int h);
 
 int main(int argc, char *argv[])
 {
@@ -57,10 +63,6 @@ int main(int argc, char *argv[])
         .help("saves requests and responses to files")
         .default_value(false)
         .implicit_value(true);
-
-    string resourceUrl, host, logsDir;
-    bool saveData = false;
-    int port, timeout;
 
     try
     {
@@ -100,12 +102,15 @@ int main(int argc, char *argv[])
     int y = 0, w = tb_width(), h = tb_height();
     string emptyStr(w, ' ');
 
-    int maxReports = h - 13;
+    int maxReports = h - 13 > 0 ? h - 13 : 1;
     string reports[maxReports][2];
     int pos = 0;
 
-    auto updateRequestsUI = [&](string method, string path)
+    auto printRequestsUI = [&](string method, string path)
     {
+        if (maxReports <= 1)
+            return;
+
         if (pos == maxReports - 1)
         {
             if (!reports[pos][0].empty())
@@ -139,20 +144,22 @@ int main(int argc, char *argv[])
         }
     };
 
-    auto updateStatusUI = [&](bool error, string method, string path, int status, string message)
+    auto printResultsUI = [&](bool error, string method, string path, int status, string message)
     {
-        tb_printf(0, tb_height() - 2, 0, 0, emptyStr.c_str());
-        tb_printf(0, tb_height() - 1, 0, 0, emptyStr.c_str());
+        int firstResultLine = h - 3, secondResultLine = h - 2;
+
+        tb_printf(0, firstResultLine, 0, 0, emptyStr.c_str());
+        tb_printf(0, secondResultLine, 0, 0, emptyStr.c_str());
 
         if (error)
         {
-            tb_printf(0, tb_height() - 2, TB_RED, 0, "> %s %s", method.c_str(), path.c_str());
-            tb_printf(0, tb_height() - 1, TB_RED, 0, "> %s", message.c_str());
+            tb_printf(0, firstResultLine, TB_RED, 0, "> %s %s", method.c_str(), path.c_str());
+            tb_printf(0, secondResultLine, TB_RED, 0, "> %s", message.c_str());
         }
         else
         {
-            tb_printf(0, tb_height() - 2, TB_GREEN, 0, "> %s %s", method.c_str(), path.c_str());
-            tb_printf(0, tb_height() - 1, TB_GREEN, 0, "> %d - %s", status, message.c_str());
+            tb_printf(0, firstResultLine, TB_GREEN, 0, "> %s %s", method.c_str(), path.c_str());
+            tb_printf(0, secondResultLine, TB_GREEN, 0, "> %d - %s", status, message.c_str());
         }
 
         tb_present();
@@ -169,7 +176,7 @@ int main(int argc, char *argv[])
 
             if (method == "OPTIONS")
             {
-                updateRequestsUI(method, path);
+                printRequestsUI(method, path);
 
                 res.set_header("Access-Control-Allow-Methods", "*");
                 res.set_header("Access-Control-Allow-Headers", "*");
@@ -228,7 +235,7 @@ int main(int argc, char *argv[])
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
 
-            updateRequestsUI(method, path);
+            printRequestsUI(method, path);
 
             if (method == "POST")
             {
@@ -288,7 +295,7 @@ int main(int argc, char *argv[])
 
             if (result)
             {
-                updateStatusUI(false, method, path, result->status, result->reason);
+                printResultsUI(false, method, path, result->status, result->reason);
                 handleResultSuccess(logduto, req, res, result);
                 return;
             }
@@ -299,7 +306,7 @@ int main(int argc, char *argv[])
         catch (const exception &e)
         {
             string err = e.what();
-            updateStatusUI(true, method, path, 0, err);
+            printResultsUI(true, method, path, 0, err);
             handleResultError(res);
         }
     };
@@ -333,30 +340,19 @@ int main(int argc, char *argv[])
     thread t(startServer);
     t.detach();
 
-    for (const string s : title_array)
-    {
-        tb_printf(0, y++, TB_BLUE, 0, s.c_str());
-    }
-
-    string from = "http://" + host + ":" + to_string(port);
-    string to = resourceUrl;
-    string statusBar(73, ' ');
-
-    tb_printf(0, y++, 0, 0, "");
-    tb_printf(0, y, 0, 0, "Forwarding from ");
-    tb_printf(16, y, TB_GREEN, 0, from.c_str());
-    tb_printf(from.size() + 16, y, 0, 0, " to ");
-    tb_printf(from.size() + 20, y++, TB_RED, 0, to.c_str());
-    tb_printf(0, y++, 0, 0, "Press Esc or Ctrl-C to quit");
-    tb_printf(0, y++, 0, 0, "");
-    tb_printf(0, tb_height() - 3, 0, TB_BLUE, statusBar.c_str());
-    tb_printf(66, tb_height() - 3, TB_WHITE, TB_BLUE, "v%s", PROGRAM_VERSION);
-
-    tb_present();
+    y = printUI(w, h);
 
     while (true)
     {
         tb_poll_event(&ev);
+
+        if (ev.type == TB_EVENT_RESIZE)
+        {
+            w = ev.w;
+            h = ev.h;
+            tb_clear();
+            y = printUI(w, h);
+        }
 
         if (ev.key == 3 || ev.key == 27)
         {
@@ -410,4 +406,35 @@ bool isInvalidHeader(const string &header)
            header == "LOCAL_PORT" ||
            header == "REMOTE_ADDR" ||
            header == "REMOTE_PORT";
+}
+
+int printUI(int w, int h)
+{
+    int y = 0;
+    string from = "http://" + host + ":" + to_string(port);
+    string to = resourceUrl;
+    string emptyStr(w, ' ');
+
+    // Print Title
+    for (const string s : title_array)
+    {
+        tb_printf(0, y++, TB_BLUE, 0, s.c_str());
+    }
+
+    // Print Info
+    tb_printf(0, y++, 0, 0, "");
+    tb_printf(0, y, 0, 0, "Forwarding from ");
+    tb_printf(16, y, TB_GREEN, 0, from.c_str());
+    tb_printf(from.size() + 16, y, 0, 0, " to ");
+    tb_printf(from.size() + 20, y++, TB_RED, 0, to.c_str());
+    tb_printf(0, y++, 0, 0, "Press Esc or Ctrl-C to quit");
+    tb_printf(0, y++, 0, 0, "");
+
+    // Print Status bar
+    tb_printf(0, h - 1, 0, TB_BLUE, emptyStr.c_str());
+    tb_printf(w - 7, h - 1, TB_WHITE, TB_BLUE, "v%s", PROGRAM_VERSION);
+
+    tb_present();
+
+    return y;
 }
