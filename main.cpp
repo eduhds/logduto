@@ -173,7 +173,6 @@ int main(int argc, char *argv[])
 
         try
         {
-
             if (method == "OPTIONS")
             {
                 printRequestsUI(method, path);
