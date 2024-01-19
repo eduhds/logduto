@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         reports[pos][1] = path;
 
         string emptyStr(w, ' ');
-        int start = pos > maxResultLines ? pos - maxResultLines : 0;
+        int start = pos > (maxResultLines - 1) ? pos - (maxResultLines - 1) : 0;
         int line = 0;
 
         for (int i = start; i <= pos; i++)
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
                 reports[i][0] = "";
                 reports[i][1] = "";
             }
-            
+
             tb_clear();
             y = printUI(w, h);
         }
