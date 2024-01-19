@@ -24,12 +24,13 @@
 using namespace std;
 
 string resourceUrl, host, logsDir;
-bool saveData = false;
+bool saveData = false, cleanLogs = false;
 int port, timeout;
 const int maxReports = 100;
 const int fixedLines = 13;
 int countFiles = 0;
 float sizeFiles = 0;
+bool logsCleaned = false;
 
 void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
 
@@ -44,6 +45,8 @@ int calcFreeLines(int h);
 int calcMaxResultLines(int freeLines);
 
 void countLogFiles();
+
+bool cleanLogFiles();
 
 int main(int argc, char *argv[])
 {
@@ -74,6 +77,11 @@ int main(int argc, char *argv[])
         .default_value(false)
         .implicit_value(true);
 
+    program.add_argument("-c", "--clean")
+        .help("cleans log files")
+        .default_value(false)
+        .implicit_value(true);
+
     try
     {
         program.parse_args(argc, argv);
@@ -84,6 +92,7 @@ int main(int argc, char *argv[])
         saveData = program.get<bool>("--data");
         logsDir = program.get<string>("--logs");
         timeout = stoi(program.get<string>("--timeout"));
+        cleanLogs = program.get<bool>("--clean");
 
         if (logsDir != DEFAULT_LOGS_DIR)
         {
@@ -96,6 +105,11 @@ int main(int argc, char *argv[])
         cerr << err.what() << endl;
         cerr << program;
         exit(1);
+    }
+
+    if (cleanLogs)
+    {
+        logsCleaned = cleanLogFiles();
     }
 
     httplib::Server server;
@@ -472,7 +486,15 @@ int printUI(int w, int h)
 
     // Print Status bar
     tb_printf(0, h - 1, 0, TB_BLUE, emptyStr.c_str());
-    tb_printf(1, h - 1, TB_WHITE, TB_BLUE, "%d logs (%.2f %s)", countFiles, filesSize, unity.c_str());
+    if (logsCleaned)
+    {
+        logsCleaned = false;
+        tb_printf(1, h - 1, TB_WHITE, TB_BLUE, "All logs cleaned");
+    }
+    else
+    {
+        tb_printf(1, h - 1, TB_WHITE, TB_BLUE, "%d logs (%.2f %s)", countFiles, filesSize, unity.c_str());
+    }
     tb_printf(w - 7, h - 1, TB_WHITE, TB_BLUE, "v%s", PROGRAM_VERSION);
 
     tb_present();
@@ -504,5 +526,22 @@ void countLogFiles()
             sizeFiles += fileSize;
             countFiles++;
         }
+    }
+}
+
+bool cleanLogFiles()
+{
+    try
+    {
+        for (const auto &entry : filesystem::directory_iterator(logsDir))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".log")
+                filesystem::remove(entry.path());
+        }
+        return true;
+    }
+    catch (const exception &e)
+    {
+        return false;
     }
 }
