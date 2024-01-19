@@ -28,6 +28,8 @@ bool saveData = false;
 int port, timeout;
 const int maxReports = 100;
 const int fixedLines = 13;
+int countFiles = 0;
+float sizeFiles = 0;
 
 void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib::Response &res, httplib::Result &result);
 
@@ -40,6 +42,8 @@ int printUI(int w, int h);
 int calcFreeLines(int h);
 
 int calcMaxResultLines(int freeLines);
+
+void countLogFiles();
 
 int main(int argc, char *argv[])
 {
@@ -435,6 +439,22 @@ int printUI(int w, int h)
     string to = resourceUrl;
     string emptyStr(w, ' ');
 
+    countLogFiles();
+    float filesSize = sizeFiles > 1000 ? sizeFiles / 1000 : sizeFiles;
+    string unity = "KB";
+
+    if (filesSize > 1000)
+    {
+        filesSize /= 1000;
+        unity = "MB";
+    }
+
+    if (filesSize > 1000)
+    {
+        filesSize /= 1000;
+        unity = "GB";
+    }
+
     // Print Title
     for (const string s : title_array)
     {
@@ -452,6 +472,7 @@ int printUI(int w, int h)
 
     // Print Status bar
     tb_printf(0, h - 1, 0, TB_BLUE, emptyStr.c_str());
+    tb_printf(1, h - 1, TB_WHITE, TB_BLUE, "%d logs (%.2f %s)", countFiles, filesSize, unity.c_str());
     tb_printf(w - 7, h - 1, TB_WHITE, TB_BLUE, "v%s", PROGRAM_VERSION);
 
     tb_present();
@@ -468,4 +489,20 @@ int calcFreeLines(int h)
 int calcMaxResultLines(int freeLines)
 {
     return freeLines < maxReports ? freeLines : maxReports;
+}
+
+void countLogFiles()
+{
+    countFiles = 0;
+    sizeFiles = 0;
+
+    for (const auto &entry : filesystem::directory_iterator(logsDir))
+    {
+        if (entry.is_regular_file() && entry.path().extension() == ".log")
+        {
+            int fileSize = filesystem::file_size(entry.path());
+            sizeFiles += fileSize;
+            countFiles++;
+        }
+    }
 }
