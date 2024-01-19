@@ -11,7 +11,7 @@ An unpretentious HTTP request logger.
 Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
 
 ```sh
-wget https://github.com/eduhds/logduto/releases/download/0.0.2/Logduto-0.0.2-$(uname).tar.gz
+wget https://github.com/eduhds/logduto/releases/download/0.0.3/Logduto-0.0.3-$(uname).tar.gz
 
 tar -xf Logduto*.tar.gz
 
@@ -27,7 +27,7 @@ logduto https://cat-fact.herokuapp.com
 ```
 
 ```
-Usage: Logduto [--help] [--version] [--host VAR] [--port VAR] [--logs VAR] [--timeout VAR] [--data] url
+Usage: Logduto [--help] [--version] [--host VAR] [--port VAR] [--logs VAR] [--timeout VAR] [--data] [--clean] url
 
 Positional arguments:
   url            URL to redirect all requests to [required]
@@ -38,8 +38,9 @@ Optional arguments:
   -H, --host     specify host for the server [nargs=0..1] [default: "0.0.0.0"]
   -p, --port     specify port for the server [nargs=0..1] [default: "8099"]
   -l, --logs     specify the directory where to save logs, requests and responses files [nargs=0..1] [default: "./logs"]
-  -t, --timeout  specify timeout for requests [nargs=0..1] [default: "10"]
+  -t, --timeout  specify timeout for the client [nargs=0..1] [default: "10"]
   -d, --data     saves requests and responses to files
+  -c, --clean    cleans log files
 ```
 
 ## Developement
