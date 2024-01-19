@@ -99,6 +99,8 @@ int main(int argc, char *argv[])
             if (!filesystem::is_directory(logsDir))
                 throw runtime_error("Specified logs directory is not a directory\n");
         }
+
+        filesystem::create_directories(logsDir);
     }
     catch (const exception &err)
     {
