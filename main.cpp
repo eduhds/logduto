@@ -7,6 +7,7 @@
 #include <iostream>
 #include <filesystem>
 #include <thread>
+#include <ctime>
 #include "libs/argparse.hpp"
 #include "libs/termbox2.h"
 #define CPPHTTPLIB_OPENSSL_SUPPORT
@@ -47,6 +48,8 @@ int calcMaxResultLines(int freeLines);
 void countLogFiles();
 
 bool cleanLogFiles();
+
+string currentTimeStr();
 
 int main(int argc, char *argv[])
 {
@@ -128,10 +131,10 @@ int main(int argc, char *argv[])
     int y = 0, w = tb_width(), h = tb_height();
     int freeLines = calcFreeLines(h);
     int maxResultLines = calcMaxResultLines(freeLines);
-    string reports[maxReports][2];
+    string reports[maxReports][3];
     int pos = 0;
 
-    auto printRequestsUI = [&](string method, string path)
+    auto printRequestsUI = [&](string method, string path, string timemin)
     {
         if (maxResultLines < 1)
             return;
@@ -144,12 +147,14 @@ int main(int argc, char *argv[])
                 {
                     reports[i][0] = reports[i + 1][0];
                     reports[i][1] = reports[i + 1][1];
+                    reports[i][2] = reports[i + 1][2];
                 }
             }
         }
 
         reports[pos][0] = method;
         reports[pos][1] = path;
+        reports[pos][2] = timemin;
 
         string emptyStr(w, ' ');
         int start = pos > (maxResultLines - 1) ? pos - (maxResultLines - 1) : 0;
@@ -161,8 +166,9 @@ int main(int argc, char *argv[])
             tb_printf(0, y + line, 0, 0, emptyStr.c_str());
             tb_printf(0, y + (line + 1), 0, 0, emptyStr.c_str());
 
-            tb_printf(0, y + line, 0, TB_YELLOW, " %s ", reports[i][0].c_str());
-            tb_printf(reports[i][0].size() + 3, y + line, 0, 0, reports[i][1].c_str());
+            tb_printf(0, y + line, 0, 0, reports[i][2].c_str());
+            tb_printf(9, y + line, 0, TB_YELLOW, " %s ", reports[i][0].c_str());
+            tb_printf(reports[i][0].size() + 12, y + line, 0, 0, reports[i][1].c_str());
             line++;
         }
 
@@ -202,11 +208,13 @@ int main(int argc, char *argv[])
         string method = req.method;
         string contentType = req.has_header("Content-Type") ? req.get_header_value("Content-Type") : "text/plain";
 
+        string timemin = currentTimeStr();
+
         try
         {
             if (method == "OPTIONS")
             {
-                printRequestsUI(method, path);
+                printRequestsUI(method, path, timemin);
 
                 res.set_header("Access-Control-Allow-Methods", "*");
                 res.set_header("Access-Control-Allow-Headers", "*");
@@ -265,7 +273,7 @@ int main(int argc, char *argv[])
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
 
-            printRequestsUI(method, path);
+            printRequestsUI(method, path, timemin);
 
             if (method == "POST")
             {
@@ -388,6 +396,7 @@ int main(int argc, char *argv[])
             {
                 reports[i][0] = "";
                 reports[i][1] = "";
+                reports[i][2] = "";
             }
 
             tb_clear();
@@ -546,4 +555,17 @@ bool cleanLogFiles()
     {
         return false;
     }
+}
+
+string currentTimeStr(){
+    time_t t = time(0);
+    tm* now = localtime(&t);
+    string hr = to_string(now->tm_hour);
+    hr = hr.length() == 1 ? "0" + hr : hr;
+    string mn = to_string(now->tm_min);
+    mn = mn.length() == 1 ? "0" + mn : mn;
+    string sc = to_string(now->tm_sec);
+    sc = sc.length() == 1 ? "0" + sc : sc;
+
+    return hr + ":" + mn + ":" + sc;
 }
