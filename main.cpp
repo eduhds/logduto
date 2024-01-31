@@ -14,6 +14,7 @@
 #include "libs/httplib.h"
 #include "logduto.hpp"
 #include "title.hpp"
+#include "util.hpp"
 
 #define PROGRAM_NAME "Logduto"
 #define PROGRAM_VERSION "0.0.3"
@@ -49,7 +50,7 @@ void countLogFiles();
 
 bool cleanLogFiles();
 
-string currentTimeStr();
+int methodColor(string method);
 
 int main(int argc, char *argv[])
 {
@@ -167,7 +168,7 @@ int main(int argc, char *argv[])
             tb_printf(0, y + (line + 1), 0, 0, emptyStr.c_str());
 
             tb_printf(0, y + line, 0, 0, reports[i][2].c_str());
-            tb_printf(9, y + line, 0, TB_YELLOW, " %s ", reports[i][0].c_str());
+            tb_printf(9, y + line, 0, methodColor(reports[i][0]), " %s ", reports[i][0].c_str());
             tb_printf(reports[i][0].size() + 12, y + line, 0, 0, reports[i][1].c_str());
             line++;
         }
@@ -557,15 +558,15 @@ bool cleanLogFiles()
     }
 }
 
-string currentTimeStr(){
-    time_t t = time(0);
-    tm* now = localtime(&t);
-    string hr = to_string(now->tm_hour);
-    hr = hr.length() == 1 ? "0" + hr : hr;
-    string mn = to_string(now->tm_min);
-    mn = mn.length() == 1 ? "0" + mn : mn;
-    string sc = to_string(now->tm_sec);
-    sc = sc.length() == 1 ? "0" + sc : sc;
-
-    return hr + ":" + mn + ":" + sc;
+int methodColor(string method)
+{
+    if (method == "GET")
+        return TB_GREEN;
+    if (method == "POST")
+        return TB_YELLOW;
+    if (method == "PUT")
+        return TB_BLUE;
+    if (method == "DELETE")
+        return TB_RED;
+    return TB_WHITE;
 }
