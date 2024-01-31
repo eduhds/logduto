@@ -6,6 +6,8 @@
 
 An unpretentious HTTP request logger.
 
+<img src="screenshot.png" />
+
 ## Install
 
 Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
@@ -58,3 +60,4 @@ sh scripts/build.sh -r
 - [yhirose/cpp-httplib](https://github.com/yhirose/cpp-httplib)
 - [p-ranav/argparse](https://github.com/p-ranav/argparse)
 - [termbox/termbox2](https://github.com/termbox/termbox2)
+- [typicode/jsonplaceholder](https://github.com/typicode/jsonplaceholder)
