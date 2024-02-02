@@ -13,7 +13,7 @@ An unpretentious HTTP request logger.
 Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
 
 ```sh
-wget https://github.com/eduhds/logduto/releases/download/0.0.3/Logduto-0.0.3-$(uname).tar.gz
+wget https://github.com/eduhds/logduto/releases/download/0.0.4/Logduto-0.0.4-$(uname)-$(uname -m).tar.gz
 
 tar -xf Logduto*.tar.gz
 
