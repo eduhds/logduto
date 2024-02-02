@@ -1,7 +1,7 @@
 #!/bin/sh
 
 program_name="$(basename $(pwd))"
-version=0.0.3
+version=0.0.4
 
 build_libs() {
     lib_dir="build/$1/lib"
@@ -59,7 +59,7 @@ if [ "$1" = "-r" ]; then
         echo "Failed to compile"; exit 1
     else
         tar -C build/release/bin \
-            -czvf build/release/bin/${program_name^}-$version-$(uname).tar.gz \
+            -czvf build/release/bin/${program_name^}-$version-$(uname)-$(uname -m).tar.gz \
             $program_name > /dev/null
     fi
 elif [ "$1" = "-d" ]; then
