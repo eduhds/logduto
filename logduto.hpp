@@ -4,6 +4,7 @@
 #include <ctime>
 #include <regex>
 #include "targetfile.hpp"
+#include "util.hpp"
 
 using namespace std;
 
@@ -164,7 +165,7 @@ void Logduto::saveToFile()
         string date = ctime(&now);
         date = removeLastNewLine(regex_replace(date, regex("  "), " "));
 
-        string dateFormat = regex_replace(date, regex(" "), "_");
+        string dateFormat = currentDateStr() + "_" + currentTimeStr();
 
         target_file tfile = resolve_file(path);
 

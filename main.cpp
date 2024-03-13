@@ -14,7 +14,6 @@
 #include "libs/httplib.h"
 #include "logduto.hpp"
 #include "title.hpp"
-#include "util.hpp"
 
 #define PROGRAM_NAME "Logduto"
 #define PROGRAM_VERSION "0.0.4"

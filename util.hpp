@@ -17,3 +17,16 @@ string currentTimeStr()
 
   return hr + ":" + mn + ":" + sc;
 }
+
+string currentDateStr()
+{
+  time_t t = time(0);
+  tm *now = localtime(&t);
+  string year = to_string(now->tm_year + 1900);
+  string month = to_string(now->tm_mon + 1);
+  month = month.length() == 1 ? "0" + month : month;
+  string day = to_string(now->tm_mday);
+  day = day.length() == 1 ? "0" + day : day;
+
+  return year + "-" + month + "-" + day;
+}
