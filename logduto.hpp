@@ -67,6 +67,8 @@ public:
     void setResData(ResData res);
 
     void saveToFile();
+
+    static void saveCalls(string dir, string message);
 };
 
 string removeLastNewLine(string str)
@@ -225,5 +227,23 @@ void Logduto::saveToFile()
     {
         cerr << "Failed to save log file" << endl;
         cerr << e.what() << endl;
+    }
+}
+
+void Logduto::saveCalls(string dir, string message)
+{
+    try
+    {
+        filesystem::create_directories(dir);
+        ofstream file(dir + "/logduto.log", ios_base::app);
+
+        string time = currentTimeStr();
+        string date = currentDateStr();
+
+        file << date << " " << time << " - " << message << endl;
+    }
+    catch (const exception &e)
+    {
+        cerr << e.what() << '\n';
     }
 }
