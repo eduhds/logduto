@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
             if (method == "OPTIONS")
             {
                 printRequestsUI(method, path, timemin);
-                Logduto::saveCalls(logsDir, "[REQ] " + method + " " + path);
+                Logduto::saveCalls(logsDir, "[↑] " + method + " " + path);
 
                 res.set_header("Access-Control-Allow-Methods", "*");
                 res.set_header("Access-Control-Allow-Headers", "*");
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
             Logduto logduto(method, path, saveData, saveData);
             logduto.logsDir = logsDir;
 
-            Logduto::saveCalls(logduto.logsDir, "[REQ] " + method + " " + path);
+            Logduto::saveCalls(logduto.logsDir, "[↑] " + method + " " + path);
 
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 
             if (result)
             {
-                Logduto::saveCalls(logduto.logsDir, "[RES] " + method + " " + path + " " + to_string(result->status) + " - " + result->reason);
+                Logduto::saveCalls(logduto.logsDir, "[↓] " + method + " " + path + " " + to_string(result->status) + " - " + result->reason);
                 printResultsUI(false, method, path, result->status, result->reason);
                 handleResultSuccess(logduto, req, res, result);
                 return;
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
         catch (const exception &e)
         {
             string err = e.what();
-            Logduto::saveCalls(logsDir, "[ERR] " + method + " " + path + " " + err);
+            Logduto::saveCalls(logsDir, "[✗] " + method + " " + path + " " + err);
             printResultsUI(true, method, path, 0, err);
             handleResultError(res);
         }

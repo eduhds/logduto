@@ -240,7 +240,7 @@ void Logduto::saveCalls(string dir, string message)
         string time = currentTimeStr();
         string date = currentDateStr();
 
-        file << date << " " << time << " - " << message << endl;
+        file << date << " " << time << " " << message << endl;
     }
     catch (const exception &e)
     {
