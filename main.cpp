@@ -8,12 +8,14 @@
 #include <filesystem>
 #include <thread>
 #include <ctime>
+#include <vector>
 #include "libs/argparse.hpp"
 #include "libs/termbox2.h"
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "libs/httplib.h"
 #include "logduto.hpp"
 #include "title.hpp"
+#include "tui.hpp"
 
 #define PROGRAM_NAME "Logduto"
 #define PROGRAM_VERSION "0.0.4"
@@ -28,7 +30,6 @@ string resourceUrl, host, logsDir;
 bool saveData = false, cleanLogs = false;
 int port, timeout;
 const int maxReports = 100;
-const int fixedLines = 13;
 int countFiles = 0;
 float sizeFiles = 0;
 bool logsCleaned = false;
@@ -41,15 +42,9 @@ bool isInvalidHeader(const string &header);
 
 int printUI(int w, int h);
 
-int calcFreeLines(int h);
-
-int calcMaxResultLines(int freeLines);
-
 void countLogFiles();
 
 bool cleanLogFiles();
-
-int methodColor(string method);
 
 int main(int argc, char *argv[])
 {
@@ -129,55 +124,50 @@ int main(int argc, char *argv[])
 
     struct tb_event ev;
     int y = 0, w = tb_width(), h = tb_height();
-    int freeLines = calcFreeLines(h);
-    int maxResultLines = calcMaxResultLines(freeLines);
-    string reports[maxReports][3];
-    int pos = 0;
+    int maxLines = maxRecordLines(h);
 
-    auto printRequestsUI = [&](string method, string path, string timemin)
+    vector<LogRecord> records;
+
+    auto printRecords = [&](LogRecord logRecord = LogRecord())
     {
-        if (maxResultLines < 1)
-            return;
-
-        if (pos == maxReports - 1)
+        if (records.size() == maxLines)
         {
-            if (!reports[pos][0].empty())
-            {
-                for (int i = 0; i < pos; i++)
-                {
-                    reports[i][0] = reports[i + 1][0];
-                    reports[i][1] = reports[i + 1][1];
-                    reports[i][2] = reports[i + 1][2];
-                }
-            }
+            records.erase(records.begin());
+        }
+        else if (records.size() > maxLines)
+        {
+            records.resize(maxLines);
         }
 
-        reports[pos][0] = method;
-        reports[pos][1] = path;
-        reports[pos][2] = timemin;
+        if (!logRecord.isEmpty())
+        {
+            records.push_back(logRecord);
+        }
 
-        string emptyStr(w, ' ');
-        int start = pos > (maxResultLines - 1) ? pos - (maxResultLines - 1) : 0;
         int line = 0;
+        string emptyStr(w, ' ');
 
-        for (int i = start; i <= pos; i++)
+        for (LogRecord record : records)
         {
             // Clear previous result
             tb_printf(0, y + line, 0, 0, emptyStr.c_str());
             tb_printf(0, y + (line + 1), 0, 0, emptyStr.c_str());
 
-            tb_printf(0, y + line, 0, 0, reports[i][2].c_str());
-            tb_printf(9, y + line, 0, methodColor(reports[i][0]), " %s ", reports[i][0].c_str());
-            tb_printf(reports[i][0].size() + 12, y + line, 0, 0, reports[i][1].c_str());
+            bool hasError = !record.error.empty();
+
+            auto ARROW_ICON = record.statusCode == -1 ? UP_ICON : DOWN_ICON;
+            auto resultMessage = record.statusCode == -1 ? "" : to_string(record.statusCode) + " " + record.statusReason;
+            string icon = hasError ? X_ICON : ARROW_ICON;
+            string message = hasError ? record.error : resultMessage;
+
+            tb_printf(0, y + line, 0, 0, "%s", record.timemin.c_str());
+            tb_printf(9, y + line, hasError ? TB_RED : TB_BLUE, 0, "%s", icon.c_str());
+            tb_printf(11, y + line, 0, methodColor(record.method), " %s ", record.method.c_str());
+            tb_printf(record.method.size() + 14, y + line, hasError ? TB_RED : 0, 0, "%s %s", record.path.c_str(), message.c_str());
             line++;
         }
 
         tb_present();
-
-        if (pos < maxReports - 1)
-        {
-            pos++;
-        }
     };
 
     auto printResultsUI = [&](bool error, string method, string path, int status, string message)
@@ -214,7 +204,7 @@ int main(int argc, char *argv[])
         {
             if (method == "OPTIONS")
             {
-                printRequestsUI(method, path, timemin);
+                printRecords(LogRecord(timemin, method, path));
                 Logduto::saveCalls(logsDir, "[↑] " + method + " " + path);
 
                 res.set_header("Access-Control-Allow-Methods", "*");
@@ -276,7 +266,7 @@ int main(int argc, char *argv[])
             withHeadersAndParams = withHeaders && withParams;
             withHeadersAndBody = withHeaders && withBody;
 
-            printRequestsUI(method, path, timemin);
+            printRecords(LogRecord(timemin, method, path));
 
             if (method == "POST")
             {
@@ -336,20 +326,20 @@ int main(int argc, char *argv[])
 
             if (result)
             {
+                printRecords(LogRecord(currentTimeStr(), method, path, result->status, result->reason));
                 Logduto::saveCalls(logduto.logsDir, "[↓] " + method + " " + path + " " + to_string(result->status) + " - " + result->reason);
-                printResultsUI(false, method, path, result->status, result->reason);
                 handleResultSuccess(logduto, req, res, result);
                 return;
             }
 
             auto err = result.error();
-            throw runtime_error("Cannot obtain result from " + path + ": " + httplib::to_string(err));
+            throw runtime_error("Error: " + httplib::to_string(err));
         }
         catch (const exception &e)
         {
             string err = e.what();
+            printRecords(LogRecord(currentTimeStr(), method, path, err));
             Logduto::saveCalls(logsDir, "[✗] " + method + " " + path + " " + err);
-            printResultsUI(true, method, path, 0, err);
             handleResultError(res);
         }
     };
@@ -393,18 +383,12 @@ int main(int argc, char *argv[])
         {
             w = ev.w;
             h = ev.h;
-            pos = 0;
-            freeLines = calcFreeLines(h);
-            maxResultLines = calcMaxResultLines(freeLines);
 
-            for (int i = 0; i < maxReports; i++)
-            {
-                reports[i][0] = "";
-                reports[i][1] = "";
-                reports[i][2] = "";
-            }
+            maxLines = maxRecordLines(h);
 
             tb_clear();
+
+            printRecords();
             y = printUI(w, h);
         }
 
@@ -518,17 +502,6 @@ int printUI(int w, int h)
     return y;
 }
 
-int calcFreeLines(int h)
-{
-    int freeLines = h - fixedLines;
-    return freeLines > 0 ? freeLines : 0;
-}
-
-int calcMaxResultLines(int freeLines)
-{
-    return freeLines < maxReports ? freeLines : maxReports;
-}
-
 void countLogFiles()
 {
     countFiles = 0;
@@ -560,17 +533,4 @@ bool cleanLogFiles()
     {
         return false;
     }
-}
-
-int methodColor(string method)
-{
-    if (method == "GET")
-        return TB_GREEN;
-    if (method == "POST")
-        return TB_YELLOW;
-    if (method == "PUT")
-        return TB_BLUE;
-    if (method == "DELETE")
-        return TB_RED;
-    return TB_WHITE;
 }

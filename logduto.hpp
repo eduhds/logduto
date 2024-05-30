@@ -247,3 +247,51 @@ void Logduto::saveCalls(string dir, string message)
         cerr << e.what() << '\n';
     }
 }
+
+class LogRecord
+{
+private:
+    bool empty = true;
+
+public:
+    string timemin;
+    string method;
+    string path;
+    int statusCode = -1;
+    string statusReason;
+    string error;
+
+    LogRecord() {}
+
+    LogRecord(string t, string m, string p)
+    {
+        empty = false;
+        timemin = t;
+        method = m;
+        path = p;
+    }
+
+    LogRecord(string t, string m, string p, int s, string r)
+    {
+        empty = false;
+        timemin = t;
+        method = m;
+        path = p;
+        statusCode = s;
+        statusReason = r;
+    }
+
+    LogRecord(string t, string m, string p, string e)
+    {
+        empty = false;
+        timemin = t;
+        method = m;
+        path = p;
+        error = e;
+    }
+
+    bool isEmpty()
+    {
+        return empty;
+    }
+};
