@@ -25,7 +25,7 @@ sudo mv logduto /usr/local/bin
 ## Usage
 
 ```sh
-logduto https://cat-fact.herokuapp.com
+logduto https://jsonplaceholder.typicode.com
 ```
 
 ```
