@@ -13,6 +13,7 @@
 #include "libs/termbox2.h"
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "libs/httplib.h"
+#include "files.hpp"
 #include "logduto.hpp"
 #include "title.hpp"
 #include "tui.hpp"
@@ -29,7 +30,6 @@ using namespace std;
 string resourceUrl, host, logsDir;
 bool saveData = false, cleanLogs = false;
 int port, timeout;
-const int maxReports = 100;
 int countFiles = 0;
 float sizeFiles = 0;
 bool logsCleaned = false;
@@ -43,8 +43,6 @@ bool isInvalidHeader(const string &header);
 int printUI(int w, int h);
 
 void countLogFiles();
-
-bool cleanLogFiles();
 
 int main(int argc, char *argv[])
 {
@@ -109,7 +107,7 @@ int main(int argc, char *argv[])
 
     if (cleanLogs)
     {
-        logsCleaned = cleanLogFiles();
+        logsCleaned = cleanLogFiles(logsDir);
     }
 
     httplib::Server server;
@@ -165,28 +163,6 @@ int main(int argc, char *argv[])
             tb_printf(11, y + line, 0, methodColor(record.method), " %s ", record.method.c_str());
             tb_printf(record.method.size() + 14, y + line, hasError ? TB_RED : 0, 0, "%s %s", record.path.c_str(), message.c_str());
             line++;
-        }
-
-        tb_present();
-    };
-
-    auto printResultsUI = [&](bool error, string method, string path, int status, string message)
-    {
-        string emptyStr(w, ' ');
-        int firstResultLine = h - 3, secondResultLine = h - 2;
-
-        tb_printf(0, firstResultLine, 0, 0, emptyStr.c_str());
-        tb_printf(0, secondResultLine, 0, 0, emptyStr.c_str());
-
-        if (error)
-        {
-            tb_printf(0, firstResultLine, TB_RED, 0, "> %s %s", method.c_str(), path.c_str());
-            tb_printf(0, secondResultLine, TB_RED, 0, "> %s", message.c_str());
-        }
-        else
-        {
-            tb_printf(0, firstResultLine, TB_GREEN, 0, "> %s %s", method.c_str(), path.c_str());
-            tb_printf(0, secondResultLine, TB_GREEN, 0, "> %d - %s", status, message.c_str());
         }
 
         tb_present();
@@ -515,22 +491,5 @@ void countLogFiles()
             sizeFiles += fileSize;
             countFiles++;
         }
-    }
-}
-
-bool cleanLogFiles()
-{
-    try
-    {
-        for (const auto &entry : filesystem::directory_iterator(logsDir))
-        {
-            if (entry.is_regular_file() && entry.path().extension() == ".log")
-                filesystem::remove(entry.path());
-        }
-        return true;
-    }
-    catch (const exception &e)
-    {
-        return false;
     }
 }
