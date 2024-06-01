@@ -19,7 +19,7 @@
 #include "tui.hpp"
 
 #define PROGRAM_NAME "Logduto"
-#define PROGRAM_VERSION "0.0.4"
+#define PROGRAM_VERSION "0.0.5"
 #define DEFAULT_HOST "0.0.0.0"
 #define DEFAULT_PORT "8099"
 #define DEFAULT_TIMEOUT "10"
