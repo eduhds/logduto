@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
         }
         else if (records.size() > maxLines)
         {
-            records.resize(maxLines);
+            records.erase(records.begin(), records.end() - maxLines);
         }
 
         if (!logRecord.isEmpty())
