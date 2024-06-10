@@ -1,7 +1,7 @@
 #!/bin/sh
 
 program_name="$(basename $(pwd))"
-version=0.0.5
+version=0.0.6
 os=$(uname)
 arch=$(uname -m)
 
