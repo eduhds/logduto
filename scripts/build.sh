@@ -2,6 +2,8 @@
 
 program_name="$(basename $(pwd))"
 version=0.0.5
+os=$(uname)
+arch=$(uname -m)
 
 build_libs() {
     lib_dir="build/$1/lib"
@@ -35,7 +37,7 @@ if [ "$1" = "-r" ]; then
         echo "Failed to compile main"; exit 1
     fi
 
-    if [ "$(uname)" = "Darwin" ]; then
+    if [ "$os" = "Darwin" ]; then
         g++ -O3 -std=c++17 \
             -o build/release/bin/$program_name \
             build/release/lib/*.o \
@@ -59,7 +61,7 @@ if [ "$1" = "-r" ]; then
         echo "Failed to compile"; exit 1
     else
         tar -C build/release/bin \
-            -czvf build/release/bin/${program_name^}-v$version-$(uname)-$(uname -m).tar.gz \
+            -czvf build/release/bin/${program_name}-v$version-${os,}-$arch.tar.gz \
             $program_name > /dev/null
     fi
 elif [ "$1" = "-d" ]; then
@@ -74,7 +76,7 @@ elif [ "$1" = "-d" ]; then
         echo "Failed to compile main"; exit 1
     fi
 
-    if [ "$(uname)" = "Darwin" ]; then
+    if [ "$os" = "Darwin" ]; then
         g++ -g -std=c++17 \
             -o build/debug/bin/$program_name \
             build/debug/lib/*.o \
