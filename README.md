@@ -13,9 +13,7 @@ An unpretentious HTTP request logger.
 Download binary executable from [Releases](https://github.com/eduhds/logduto/releases).
 
 ```sh
-wget https://github.com/eduhds/logduto/releases/download/v0.0.5/Logduto-v0.0.5-$(uname)-$(uname -m).tar.gz
-
-tar -xf Logduto*.tar.gz
+tar -xf logduto*.tar.gz
 
 chmod +x logduto
 
@@ -29,7 +27,7 @@ logduto https://jsonplaceholder.typicode.com
 ```
 
 ```
-Usage: Logduto [--help] [--version] [--host VAR] [--port VAR] [--logs VAR] [--timeout VAR] [--data] [--clean] url
+Usage: logduto [--help] [--version] [--host VAR] [--port VAR] [--logs VAR] [--timeout VAR] [--data] [--clean] url
 
 Positional arguments:
   url            URL to redirect all requests to [required]
