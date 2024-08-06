@@ -178,18 +178,6 @@ int main(int argc, char *argv[])
 
         try
         {
-            if (method == "OPTIONS")
-            {
-                printRecords(LogRecord(timemin, method, path));
-                Logduto::saveCalls(logsDir, "[↑] " + method + " " + path);
-
-                res.set_header("Access-Control-Allow-Methods", "*");
-                res.set_header("Access-Control-Allow-Headers", "*");
-                res.set_header("Access-Control-Allow-Origin", "*");
-                res.set_header("Connection", "close");
-                return;
-            }
-
             httplib::Result result;
             httplib::Params params;
             httplib::Headers headers;
@@ -244,7 +232,11 @@ int main(int argc, char *argv[])
 
             printRecords(LogRecord(timemin, method, path));
 
-            if (method == "POST")
+            if (method == "OPTIONS")
+            {
+                result = client.Options(path, headers);
+            }
+            else if (method == "POST")
             {
                 if (withHeadersAndParams)
                     result = client.Post(path, headers, params);
@@ -395,6 +387,7 @@ void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib:
     for (auto &header : result->headers)
     {
         resHeaders += header.first + ": " + header.second + "\n";
+        res.set_header(header.first, header.second);
     }
 
     logduto.setReqData(ReqData(reqHeaders, req.body.data(), reqCtnType));
@@ -403,7 +396,6 @@ void handleResultSuccess(Logduto &logduto, const httplib::Request &req, httplib:
     logduto.saveToFile();
 
     res.status = result->status;
-    res.set_header("Access-Control-Allow-Origin", "*");
     res.set_content(result->body, resCtnType);
 }
 
