@@ -19,7 +19,7 @@
 #include "tui.hpp"
 
 #define PROGRAM_NAME "logduto"
-#define PROGRAM_VERSION "0.0.6"
+#define PROGRAM_VERSION "0.0.7"
 #define DEFAULT_HOST "0.0.0.0"
 #define DEFAULT_PORT "8099"
 #define DEFAULT_TIMEOUT "10"
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
                 else
                     result = client.Delete(path);
             }
-            else //  Default GET
+            else // Default GET
             {
                 if (withHeaders)
                     result = client.Get(path, headers);
@@ -475,7 +475,7 @@ void countLogFiles()
         }
     }
 
-    while (filesSize >= 1024 && unityInex < 3)
+    while (filesSize >= 1024 && unityInex < sizeof(sizeUnities) - 1)
     {
         filesSize /= 1024;
         unityInex++;
